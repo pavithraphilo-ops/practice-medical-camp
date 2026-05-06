@@ -1,0 +1,112 @@
+UQID,Category,Name,Formulation,Expiry
+1,A,TAB – ORGLIMP ,Glimepiride 1mg,
+2,A,TAB – ORGLIMP -2,Glimepiride 2mg,
+3,A,TAB – ORGLIMP M,Glimepiride 2mg +  Metformin HCI 500mg,
+4,A,TAB  METFORMIN   500mg,,
+5,A,TAB GLYCOMET 250 mg,Metformin    250mg,
+6,A,TAB – GLIMISIL M1,Glimepiride 1mg +  Metformin 500mg SR,
+7,A,TAB – GLIMISIL M2,Glimepiride 2mg +  Metformin 500mg SR,
+8,A,TAB.R-BEN,Glibenclamide 5mg,Aug-22
+9,A,TAB . GLYCITROL - M,Gliclazide 2mg +  Metformin 500mg SR,Aug-22
+11,B,TAB ORMIPRO 2.5,Rampril 2. 5mg,
+12,B,TAB ORMIPRO 5,Rampril 5mg,
+13,B,TAB- AMLOBID,Amlodipine 5mg+ Atenolol 50mg ,
+14,B,TAB Telmisartan  20 mg       ,,
+15,B,TAB Telmisartan 40 mg,,
+16,B,TAB Telmisartan 40mg + Hydrochlorthiazide 12.5mg,,
+17,B,TAB ECOSPIRIN 75,Asprin ,
+18,B,TAB ECOSPIRIN 150 MG,Asprin ,
+19,B,TAB CLOPIDEGRAL,Clopidogrel Tablets IP 75 mg,Oct-22
+20,B,TAB AMLODIPINE 5MG,,
+21,C,TAB ATORVASTIN 10 mg,,
+22,C,TAB ATORVASTIN 20 mg,,
+26,D,TAB MECO - PG,Pregabalin 75 + Methylcobalamine 1500mg,
+27,D,TAB NEUROSAN - PGN,Pregabalin 75mg SR + Methylcobalamine 1500mg+Nortryptilin 10mg,
+31,E,FUCID CREAM,Fusidic acid 2%,
+32,E,LULIZ CREAM,Luliconazole 1%,
+34,E,TAB FLUCASIL - 150,Fluconazole 150 mg,
+35,E,TAB ALERGID L,LevoCetrizine 5mg ,
+36,E,TAB ALERGID ML,Montelukast 10mg + Levocetrizine hydrochloride 5mg,
+37,E,LIQUID PARAFFIN BOTTLES,Liquid Petrolatum+ Mineral Oil,
+38,E,TAB TACOZ 100,Itraconazole 100 mg,Aug-22
+41,F,VOMEEZ 4 HD,Ondansetron HCL 4 mg(Mouth Dissolve),Apr-23
+42,F,TAB METRONIDAZOLE,,
+43,F,TAB ZYBEND 400 mg ,  Albendazole 400mg,
+44,F,TAB RAPRA 20,Rabeprozole 20mg,
+46,F,TAB ACINOK - 40,Pantoprazole 40mg,
+47,F,TAB PROZOSIL - DP,Pantoprazole 20mg + Domperidone 10mg,
+48,F,TAB NILCID,Omeprazole 20mg,
+49,F,CAP – NILICID – D 30 mg,Domperidone 30 mg(SR)+ Omeprazole 20 mg,
+51,F,TAB .SODOCEL,Sodium Bicarbonate,Sep-22
+52,F,SYRUP SANLAX,"Milk of Magnesia 1.25 ml, Liquid Paraffin 3.75 ml, Sod, PicoSulphate 3.33 ml",Oct-22
+53,F,SYRUP A2 MPS,Simenthicone 50 mg + Dried Aluminium Hydroxide gel 253 mg + Magnesium Hydroxide 250 ml,
+54,F,TAB IVERWAR 12MG,Ivermectin 12mg,
+55,F,SYRUP ALKASIL,Disodium Hydrogen Citrate 1.37gm Syrup,
+56,G,TAB - MOXITIV CV  625 ,Amoxycillin 500mg + Clavulanic Acid 125mg      ,
+57,G,DOCEF - 200,Cefpodoxime 200 mg,
+58,G,TAB – AZIDOVE 250MG,Azithromycin 250mg,
+59,G,TAB – AZIDOVE 500MG,Azithromycin 500mg,
+60,G,SANFEXIM - 200 DT,Cefixime 200mg,
+61,G, ORPICEF  200,Cefixime 200mg + Lactic Acid Bacillus 60 Million Spores,
+66,H,TAB - NIPCOLD,Cetrizine 5mg + Paracetamol 325mg  +  Phenylephrine 5mg,
+67,H,TAB-ETHOPHYLLINE 115 mg AND THEOPHYLINE 35 mg Prolongid Relax  Deriphyllin ,,
+69,H, SYRUP TERBODEX,Terbtaline 1.25mg+Bromhexine Hcl 2mg +Guaiphenesin 50mg+Menthol 2.5mg,
+70,H,SYRUP TERBODEX -AM,Terbtaline Sulphate 1.25mg +Ambroxol 15mg +Guaiphenesin 50mg +Menthol 2.5mg,
+71,H,SYRUP BRONCOWEL - DM,Dextromethorphan Hbr 10 mg+ CPM 2mg +Phenylephrine Hcl 5mg,
+72,H,SYRUP BRONCOWEL - LS,Levo-Salbutamol Sulphate 1mg + Ambroxol Hcl 30mg + Guaiphenesin 50mg,
+76 ,I,ANTIPYR -20 DT,Piroxicam 20 mg,
+77 ,I,MOBICAM - DT,Piroxicam Dispersable,Jul-22
+78,I,ACEFINAC CZ,Aceclofenac 100mg + Paracetamol 325mg + Chlorzoxazone 250mg,Sep-22
+79,I,TAB.ACIFINAC -SP,Aceclofenac 100mg + Paracetamol 325mg +Serratiopeptidase 15mg,
+80,I,TAB ACIFINAC P,Aceclofenac 100 mg + Paracetamol 325mg,Jan-23
+81 ,I, TAB PYREXIL - 500 MG,Paracetamol 500mg,
+82,I,TAB - OROPYRIN 650,Paracetamol 650mg,
+83,I,TAB DEF 6 ,Deflazacort 6mg,Dec-22
+84,I,TAB DICLOSAN PLUS,Diclofenac Potassium 50 mg+ PARACETAMOL 325 mg ,Feb-23
+85,I,TAB SERRASIL - DP,Serratiopeptidase 10mg + Diclofenacsodium 50mg,
+86,I,DICLOSAN GEL,"Diclofenec Sodium 1%, Linseed Oil B.P 3%, Methyl Salicylate 10%, Menthal 5%",
+87,I,TAB TRAMASIL P, Paracetamol 325 mg+ Tramadol Hydrochloride 37.5 MG,
+88,I,TAB FLUPIDAX -P,Flupirtine Maleate + Paracetamol,
+91,J,CAP SANIFER - XT,Ferrous Ascorbate 100 mg + Folic Acid 1.5 mg + Zinc 22.5mg,
+92,J,CAP IOFER 12,Iron + Folic Acid + Vitamin B12,Jan-23
+93,J,CAP. OSTED 3,Cholecalciferol 60000 iu,
+94 ,J,CAP.RE- VM,"Multivitamin, M inerals and Zinc",Oct-22
+95,J,TAB - VITCAL DS,Elemental Calcium+Vitamin D3,
+96 ,J,SYP.MINVITA,"Multivitamin, Multi mineral and Antioxidants",Aug-22
+97 ,J,SYP.RE - VM,"Multi Vitamins, Mineralls, Zinc (Nutritinal food suppliment)",
+98,J,ORTIZYME,Enzyme Syrup,Dec-22
+99 ,J,SANPRO CF POWDER - Protein Powder,,
+100 ,J,PROPEL D POWDER,,
+101,J,SANPRO SF  POWDER - Sugar frree Protein Powder,,
+103 ,J,PROVIG GR POWDER,,
+104 ,J,SYP OSTRATE,Calcium Carbonate+Vit D3+Zinc +Magnesium Suspension,Jul-22
+105,J,TAB - VITCAL AC, Calcium Acetate,Nov-22
+106 ,K,OXASYL -Dx,Oflazcin+ Dexamethasone Sodium Phospate HPMC,
+107,K,ANTI WAX,Ear wax Dissolvent ,
+108,K,OXYMETAZOLINE HYDROCHLORIDE NASAL SOLUTION IP 0.05% W/V,,
+109,K,CARBOXYMETHLY CELLULOSE EYE DROPS,,
+110,K,OFLAXIN EYE DROPS,,
+111,L,TAB CEFROXIL - 100 DT,Cefpodoxime Dispersible 100 mg,Jul-22
+112,L,VOMEEZ DROPS,Ondansetron Hydrochloride,Aug-22
+114,L,SYRUP SPASMOSIL - P,Dicyclomine Hydrochloride + Paracetamol Oral Suspension,Aug-22
+115 ,L,SYRUP SANCOL - S,Levosalbutamol Sulphate + Ambroxol Hydrochloride Guaiphebesia,
+116 ,L,SYRUP PYREXIL 250,Paracetamol 250 mg,
+117,L,SYRUP- ORPICEF  DRY SYRUP  - KIDS,Cefixime 50mg,
+118 ,L,SYRUP MOXITIV CV,Amoxycillin  200mg + Potassium Clavulanic Acid 28.5 mg Oral Suspension,
+119,L,SYRUP- ABEN,Albendazole Oral Suspensiob I.P.,
+120,L,TAB IVERWAR 6MG,Ivermectin 6mg,Aug-22
+121,M, THYROXINE 50,,
+122,M, THYROXINE 100,,
+123,M,TAB TRUFLAX 200,Flavoxate IP 200 mg,
+124,M,TAB LEVETIRACETAM,,
+125,M,TAB BUSCOPAN 10 mg,Hyoscine Butylbromide,
+126,M,CAP DOXYCYCLINE 100mg,,Oct-22
+127,M,TAB  PHENTOIN,,
+128,M,ORS SACHETS,,Oct-22
+129,M,TAB HISTAVERT 8MG,Betahistine 8 mg,
+130,M,TAB NORETHISTERONE 5 MG,,
+131,M,TAB FUROSEMIDE 40 MG,,
+132,M,TAB CARVEDILOL 3.125 MG,,
+133,M,CAP  CLODOC - V6,Clotrimozole 100mg,
+134,M,TAB LACTONAM - DS,,
+135,M,TAB FANSANT 50,Phentoin 50 mg,

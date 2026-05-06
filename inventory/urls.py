@@ -1,0 +1,27 @@
+from django.urls import path
+from django.views.generic import RedirectView
+from .views import *
+
+urlpatterns = [
+    # Redirect root to React Frontend (Port 5173)
+    path('', RedirectView.as_view(url='http://localhost:5173/')),
+    
+    # Legacy Django Template Views
+    path('legacy/issue/', index, name='legacy_issue'),
+
+    # Data Export
+    path('export', export),
+    
+    # API Endpoints
+    path('api/camps', api_get_camps),
+    path('api/medicines', api_get_medicines),
+    path('api/patient/<int:patient_id>', api_get_patient_details),
+    path('api/issue', api_issue_medicine),
+    path('api/save_vitals', api_save_vitals),
+    path('api/register_patient', api_register_patient),
+    path('api/check_patient_id/<int:pid>', api_check_patient_id),
+    path('api/login', api_login),
+    path('api/update_stock', api_update_medicine_stock),
+    path('api/camp_wise_stock', api_get_camp_wise_stock),
+    path('api/allocate_to_camp', api_allocate_to_camp),
+]

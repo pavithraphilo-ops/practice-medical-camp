@@ -1,0 +1,50 @@
+{% extends 'inventory/base.tpl.html' %}
+{% load django_bootstrap5 %}
+{% block content %}
+    {% if success %}
+        <div class="alert alert-success" role="alert">
+            Successfully Updated Vitals Record
+        </div>
+    {% endif %}
+
+    <form method="POST" class="form" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% bootstrap_form vitals_form layout="horizontal" %}
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary">Update Vitals</button>
+        </div>
+    </form>
+
+    <script>
+        const checkExisting = function () {
+            const patientIdEl = document.getElementsByName('patient_id')[0];
+            const medicalCampEl = document.getElementsByName('medical_camp')[0];
+            const patientIdValue = patientIdEl.value;
+            const medicalCampValue = medicalCampEl.value;
+
+            fetch('/search_vitals/' + patientIdValue + '/' + medicalCampValue)
+                .then(response => response.json())
+                .then(function (data) {
+                    data = JSON.parse(data);
+                    const bpEl = document.getElementsByName('blood_pressure')[0];
+                    const glucoseEl = document.getElementsByName('glucose')[0];
+                    const hbEl = document.getElementsByName('haemoglobin')[0];
+
+                    if (data.length > 0) {
+                        data = data[0];
+                        bpEl.value = data['fields']['blood_pressure'];
+                        glucoseEl.value = data['fields']['glucose'];
+                        hbEl.value = data['fields']['haemoglobin'];
+                    } else {
+                        bpEl.value = 'NA';
+                        glucoseEl.value = 'NA';
+                        hbEl.value = 'NA';
+                    }
+                });
+        };
+
+        document.getElementsByName('patient_id')[0].onkeyup = checkExisting;
+        document.getElementsByName('medical_camp')[0].onchange = checkExisting;
+    </script>
+
+{% endblock %}

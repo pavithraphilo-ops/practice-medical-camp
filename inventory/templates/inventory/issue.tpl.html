@@ -1,0 +1,98 @@
+{% extends 'inventory/base.tpl.html' %}
+{% load django_bootstrap5 %}
+{% block content %}
+    {% if success %}
+        <div class="alert alert-success" role="alert">
+            Successfully Issued the Meds!
+        </div>
+    {% endif %}
+
+    <div class="med-issue" style="margin-bottom: 2%; margin-top: 2%; display: none">
+        <div class="issue-block row">
+            <label for="med-id-template" class="col-sm-1 col-form-label">Med Id</label>
+            <div class="col-sm-4">
+                <input id="med-id-template" class="form-control" name="med-id" type="number" onkeyup="showMedName(this);">
+            </div>
+            <label for="qty-template" class="col-sm-1 col-form-label">Qty</label>
+            <div class="col-sm-4">
+                <input id="qty-template" class="form-control" name="qty" type="number">
+            </div>
+            <div class="col-sm-2">
+                <button type="button" class="btn btn-primary" onclick="addMedIssue();">Add</button>
+                <button type="button" class="btn btn-danger" onclick="removeMedIssue(this)">Remove</button>
+            </div>
+        </div>
+        <div class="med-search" style="margin-top: 2%">
+            <div class="col-sm-5 med-name-suggest"></div>
+        </div>
+    </div>
+
+    <form method="POST" class="form" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% bootstrap_form issue_form layout="horizontal" %}
+        <div id="med-issues">
+            {% for i in "1234" %}
+            <div class="med-issue" style="margin-bottom: 2%; margin-top: 2%">
+                <div class="issue-block row">
+                    <label for="med-id" class="col-sm-1 col-form-label">Med Id</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" name="med-id" type="number" onkeyup="showMedName(this);">
+                    </div>
+                    <label for="qty" class="col-sm-1 col-form-label">Qty</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" name="qty" type="number">
+                    </div>
+                    <div class="col-sm-2">
+                        <button type="button" class="btn btn-primary" onclick="addMedIssue();">Add</button>
+                        <button type="button" class="btn btn-danger" onclick="removeMedIssue(this)">Remove</button>
+                    </div>
+                </div>
+                <div class="med-search" style="margin-top: 2%">
+                    <div class="col-sm-5 med-name-suggest"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary">Issue Medicines</button>
+        </div>
+    </form>
+
+    <script>
+        const addMedIssue = function () {
+            const medIssuesBlock = document.getElementById('med-issues');
+            const medIssueTemplate = document.getElementsByClassName('med-issue')[0];
+            const q = document.createElement('div');
+            q.innerHTML = medIssueTemplate.outerHTML;
+            medIssuesBlock.appendChild(q);
+            const medIssues = document.getElementsByClassName('med-issue');
+            const newMedIssue = medIssues[medIssues.length - 1];
+            newMedIssue.style.display = '';
+        };
+
+        const removeMedIssue = function (evt) {
+            const medIssueBlock = evt.parentElement.parentElement.parentElement;
+            medIssueBlock.remove();
+        };
+
+        const showMedName = function (evt) {
+            const searchKey = evt.value;
+            const medIssueBlock = evt.parentElement.parentElement.parentElement;
+            const medNameSuggestion = medIssueBlock.querySelector('.med-name-suggest');
+            if (searchKey.length === 0) {
+                medNameSuggestion.innerHTML = '';
+            } else {
+                fetch('/search/' + searchKey)
+                    .then(response => response.json())
+                    .then(function (data) {
+                        if ('name' in data) {
+                            medNameSuggestion.innerHTML = '<i>Medicine Name: ' + data['name'] + '; Available: ' + data['stock'] + '</i>';
+                        } else {
+                            medNameSuggestion.innerHTML = '';
+                        }
+                    });
+            }
+        };
+    </script>
+
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends 'inventory/base.tpl.html' %}
+{% load django_bootstrap5 %}
+{% block content %}
+   {% for category, cat_set in category_set %}
+       <h2>{{ category.short_code }} - {{ category.name }}</h2>
+       <table class="table table-bordered">
+            <tr>
+                <th scope="col">UQID</th>
+                <th scope="col">Name</th>
+                <th scope="col">Formulation</th>
+                <th scope="col">Stock</th>
+                <th scope="col">Expiry Date</th>
+            </tr>
+
+           {% for med in cat_set %}
+               <tr>
+                <td> {{ med.uqid }} </td>
+                <td> {{ med.name }} </td>
+                <td> {{ med.formulation }} </td>
+                <td> {{ med.stock }} </td>
+                <td> {{ med.expiry_date }} </td>
+
+               </tr>
+           {% endfor %}
+       </table>
+   {% endfor %}
+{% endblock %}

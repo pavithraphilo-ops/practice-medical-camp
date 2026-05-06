@@ -1,0 +1,179 @@
+{% extends 'inventory/base.tpl.html' %}
+{% load django_bootstrap5 %}
+{% block content %}
+    {%  if success %}
+        <div class="alert alert-success" role="alert">
+            Successfully Issued Tests
+        </div>
+    {% endif %}
+
+
+        <div class="alert alert-info" role="alert" style="display:none" id="alert_box">
+			Fetched Issued Test List for this patient
+		</div>
+            
+    <form method="POST" class="form" enctype="multipart/form-data" >
+        {% csrf_token %}
+		<div class="mb-3 row">
+			<div class="col-3"></div>
+			
+			<label class="col-md-2 col-form-label" for="patient_id">Patient ID</label>
+			<div class="col-md-4">
+				<input id="patient_id" type="text" name="patient_id" class="form-control" required/>
+			</div>
+		</div>
+		
+		<div class="mb-3 row">
+			<div class="col-3"></div>
+			
+			<label class="col-md-2 col-form-label" for="patient_id">Camp</label>
+			<div class="col-md-4">
+				<select class="form-select" name="camp" id="camp">
+					{% for camp in all_camps %}
+						<option value={{ camp.id }}> Camp #{{ camp.number }} at {{ camp.venue}} ({{ camp.date }})</option>
+					{% endfor %}
+				</select>
+			</div>
+		</div>
+		
+        {% if all_tests %}
+			<div class="row">
+				<div class="col-3"></div>
+				<div class="col-6">
+			<table class="table table-bordered" style="padding: 5px">
+			{% for test in all_tests %}
+					<tr>
+					<td> <label class="form-check-label" for="test_{{ test.id }}">{{ test.name }}</label> </td>
+					
+					<td><input type="checkbox" id="test_{{ test.id }}" name="tests" value="{{ test.id }}" class="form-check-input"/></td>
+			
+				</tr>
+			{% endfor %}
+		</table>
+	</div>
+		<div class="col-3"></div>
+	</div>
+		{% endif %}
+		
+		<div class="row">
+			<!-- <div class="col-5"></div> -->
+			<div class="col">
+				<center>
+				<input class="btn btn-primary" type="submit" name="issue_tests" id="issue_tests" value="Submit" />
+			</center>
+			</div>
+			<!-- <div class="col-3"></div> -->
+			
+		</div>
+    </form>
+
+    <script type="text/javascript">
+        var gevt = 'p';
+		
+
+		resetCheckBoxes = function(){
+			var options = document.getElementsByName("tests");
+			var alert_box = document.getElementById("alert_box");
+			
+			for(var i=0; i < options.length; i++) {
+				var option = options[i]
+			
+					option.checked = false;
+				
+			}
+			alert_box.style.display="none";
+			
+		}
+		
+        checkExisting = function() {
+            var patient_id_element = document.getElementsByName("patient_id")[0];
+	        var medical_camp_element = document.getElementById("camp");
+			var alert_box = document.getElementById("alert_box");
+			
+            var patient_id_value = patient_id_element.value;
+            var medical_camp_value = medical_camp_element.value;
+			
+			if(patient_id_value.length == 0) {
+				resetCheckBoxes();
+				
+			}
+			else {
+				
+			
+            fetch('/get_issued_tests/' + patient_id_value + '/' + medical_camp_value).then(response => response.json()).then(function (data) {
+                data = JSON.parse(data);
+				console.log(data)
+                //response = JSON.parse(response);
+                //if "fields"
+               if (data.length > 0) {
+				var options = document.getElementsByName("tests");
+				for(var i=0; i < options.length; i++) {
+					var option = options[i]
+					if (data.indexOf(parseInt(option.value)) >= 0) {
+						console.log(parseInt(option.value))
+						
+						option.checked = true;
+					} else {
+						option.checked = false;
+					}
+				}
+				alert_box.style.display="block";
+			}
+				
+				
+					
+			 else {
+					alert_box.style.display="none";
+					
+				}
+            })  
+			}   
+        }
+
+        var patient_id_element = document.getElementsByName("patient_id")[0];
+        var medical_camp_element = document.getElementById("camp");
+
+        patient_id_element.onkeyup = checkExisting;
+        medical_camp_element.onchange = checkExisting;
+
+        addMedIssue = function (){
+            var medIssuesBlock = document.getElementById('med-issues');
+            var medIssueTemplate = document.getElementsByClassName('med-issue')[0];
+
+            var q = document.createElement('div');
+            q.innerHTML = medIssueTemplate.outerHTML;
+
+            medIssuesBlock.appendChild(q);
+            var medIssues = document.getElementsByClassName('med-issue');
+            var newMedIssue = medIssues[medIssues.length - 1];
+            newMedIssue.style.display = '';
+        }
+
+        removeMedIssue = function (evt){
+            var medIssueBlock = evt.parentElement.parentElement.parentElement;
+            medIssueBlock.remove();
+        }
+
+        showMedName = function (evt) {
+            var searchKey = evt.value;
+
+            var medIssueBlock = evt.parentElement.parentElement.parentElement;
+            var medNameSuggestion = medIssueBlock.querySelector(".med-name-suggest");
+            if (searchKey.length == 0) {
+                medNameSuggestion.innerHTML = "";
+            }
+            else {
+                fetch('/search/' + searchKey).then(response => response.json()).then(function (data) {
+                    //response = JSON.parse(response);
+                    if ('name' in data) {
+                        medNameSuggestion.innerHTML = "<i> Medicine Name :" + data['name'] + "; Available: " + data['stock'] + "</i>";
+                    } else {
+                        medNameSuggestion.innerHTML = "";
+                    }
+
+                })
+            }
+        }
+    </script>
+
+{% endblock %}

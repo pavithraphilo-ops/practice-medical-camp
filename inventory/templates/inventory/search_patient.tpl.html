@@ -1,0 +1,77 @@
+{% extends 'inventory/base.tpl.html' %}
+{% load django_bootstrap5 %}
+{% block content %}
+    <form method="GET" class="form" enctype="multipart/form-data" >
+        <div class="row">
+		<div class="col sm-8 md-2"> Patient ID : </div>
+		<div class="col sm-8 md-6"> <input type="text" name="patient_id" style="width:100%"/> </div>
+        	    <div class="col sm-8 md-4"><button type="submit" class="save btn btn-primary">Search</button></div>
+
+	</div>
+    </form>
+    {% if patient_id %}
+        <h4> Patient ID :: {{ patient_id }} </h4>
+	{% if not groups %}
+		<span style="color:red"> Information about this patient is unavailable </span>
+        {% endif %}
+    {% endif %} 
+    {% if groups %}
+	{% for camp, issues in groups.items %}
+		<div class="row">
+			<h3>{{ camp }}</h3>
+			<table class="table table-bordered table-striped">
+			<tr> <th> Medicine </th> <th> Qty </th> </tr>
+			{% for issue in issues %}
+				<tr> 
+					<td>	{{ issue.medicine.name }}  </td>
+					<td>	{{ issue.qty }}  </td>			
+				</tr>
+			{% endfor %}
+			</table>
+		</div>
+	{% endfor %}
+
+    {% endif %}
+    <script type="text/javascript">
+        var gevt = 'p';
+        addMedIssue = function (){
+            var medIssuesBlock = document.getElementById('med-issues');
+            var medIssueTemplate = document.getElementsByClassName('med-issue')[0];
+
+            var q = document.createElement('div');
+            q.innerHTML = medIssueTemplate.outerHTML;
+
+            medIssuesBlock.appendChild(q);
+            var medIssues = document.getElementsByClassName('med-issue');
+            var newMedIssue = medIssues[medIssues.length - 1];
+            newMedIssue.style.display = '';
+        }
+
+        removeMedIssue = function (evt){
+            var medIssueBlock = evt.parentElement.parentElement.parentElement;
+            medIssueBlock.remove();
+        }
+
+        showMedName = function (evt) {
+            var searchKey = evt.value;
+
+            var medIssueBlock = evt.parentElement.parentElement.parentElement;
+            var medNameSuggestion = medIssueBlock.querySelector(".med-name-suggest");
+            if (searchKey.length == 0) {
+                medNameSuggestion.innerHTML = "";
+            }
+            else {
+                fetch('/search/' + searchKey).then(response => response.json()).then(function (data) {
+                    //response = JSON.parse(response);
+                    if ('name' in data) {
+                        medNameSuggestion.innerHTML = "<i> Medicine Name :" + data['name'] + "; Available: " + data['stock'] + "</i>";
+                    } else {
+                        medNameSuggestion.innerHTML = "";
+                    }
+
+                })
+            }
+        }
+    </script>
+
+{% endblock %}

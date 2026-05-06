@@ -1,0 +1,175 @@
+{% extends 'inventory/base.tpl.html' %}
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+<script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
+{% endblock %}
+{% block content %}
+
+    <form method="GET" class="form">
+        <div class="row">
+            <div class="col sm-8 md-2"> Patient ID : </div>
+            <div class="col sm-8 md-6"> <input type="text" name="patient_id" style="width:100%"> </div>
+            <div class="col sm-8 md-4"><button type="submit" class="save btn btn-primary">Search</button></div>
+        </div>
+    </form>
+
+    {% if patient_id %}
+        <h4> Patient ID :: {{ patient_id }} </h4>
+        {% if not groups and not patient_vitals %}
+            <span style="color:red"> Information about this patient is unavailable </span>
+        {% endif %}
+    {% endif %}
+
+    {% if groups %}
+        {% for camp, issues in groups.items %}
+            <div class="row">
+                <h3>{{ camp }}</h3>
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Medicine</th>
+                            <th>Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in issues %}
+                            <tr>
+                                <td>{{ issue.medicine.name }}</td>
+                                <td>{{ issue.qty }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if patient_vitals %}
+    <div class="row" style="margin-top: 1.5rem;">
+        <h3> Vitals </h3>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Camp Date</th>
+                    <th>Blood Pressure</th>
+                    <th>Sugar</th>
+                    <th>Haemoglobin</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vitals in patient_vitals %}
+                    {% if vitals.blood_pressure != "NA" or vitals.glucose != "NA" or vitals.haemoglobin != "NA" %}
+                    <tr>
+                        <td>{{ vitals.camp }}</td>
+                        <td>{{ vitals.blood_pressure }}</td>
+                        <td>{{ vitals.glucose }}</td>
+                        <td>{{ vitals.haemoglobin }}</td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if vital_charts %}
+        {% if vital_charts.blood_pressure %}
+            <h4>Blood Pressure</h4>
+            <div id="bp-chart" class="ct-chart ct-perfect-fourth" style="transform: scale(0.8)"></div>
+            <script id="bp-data" type="application/json">
+                {
+                    "labels": [{% for date in vital_charts.blood_pressure %}"{{ date }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+                    "systolic": [{% for date, value in vital_charts.blood_pressure.items %}{{ value.systolic }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    "diastolic": [{% for date, value in vital_charts.blood_pressure.items %}{{ value.diastolic }}{% if not forloop.last %},{% endif %}{% endfor %}]
+                }
+            </script>
+            <script>
+                {
+                    const bpRaw = JSON.parse(document.getElementById('bp-data').textContent);
+                    new Chartist.Line('#bp-chart', {
+                        labels: bpRaw.labels,
+                        series: [bpRaw.systolic, bpRaw.diastolic]
+                    });
+                }
+            </script>
+        {% endif %}
+
+        {% if vital_charts.glucose %}
+            <h4>Sugar</h4>
+            <div id="sugar-chart" class="ct-chart ct-perfect-fourth" style="transform: scale(0.8)"></div>
+            <script id="sugar-data" type="application/json">
+                {
+                    "labels": [{% for date in vital_charts.glucose %}"{{ date }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+                    "values": [{% for date, value in vital_charts.glucose.items %}{{ value }}{% if not forloop.last %},{% endif %}{% endfor %}]
+                }
+            </script>
+            <script>
+                {
+                    const sugarRaw = JSON.parse(document.getElementById('sugar-data').textContent);
+                    new Chartist.Line('#sugar-chart', {
+                        labels: sugarRaw.labels,
+                        series: [sugarRaw.values]
+                    });
+                }
+            </script>
+        {% endif %}
+
+        {% if vital_charts.haemoglobin %}
+            <h4>Haemoglobin</h4>
+            <div id="hb-chart" class="ct-chart ct-perfect-fourth" style="transform: scale(0.8)"></div>
+            <script id="hb-data" type="application/json">
+                {
+                    "labels": [{% for date in vital_charts.haemoglobin %}"{{ date }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+                    "values": [{% for date, value in vital_charts.haemoglobin.items %}{{ value }}{% if not forloop.last %},{% endif %}{% endfor %}]
+                }
+            </script>
+            <script>
+                {
+                    const hbRaw = JSON.parse(document.getElementById('hb-data').textContent);
+                    new Chartist.Line('#hb-chart', {
+                        labels: hbRaw.labels,
+                        series: [hbRaw.values]
+                    });
+                }
+            </script>
+        {% endif %}
+    {% endif %}
+
+    <script>
+        const addMedIssue = function () {
+            const medIssuesBlock = document.getElementById('med-issues');
+            const medIssueTemplate = document.getElementsByClassName('med-issue')[0];
+            const q = document.createElement('div');
+            q.innerHTML = medIssueTemplate.outerHTML;
+            medIssuesBlock.appendChild(q);
+            const medIssues = document.getElementsByClassName('med-issue');
+            const newMedIssue = medIssues[medIssues.length - 1];
+            newMedIssue.style.display = '';
+        };
+
+        const removeMedIssue = function (evt) {
+            const medIssueBlock = evt.parentElement.parentElement.parentElement;
+            medIssueBlock.remove();
+        };
+
+        const showMedName = function (evt) {
+            const searchKey = evt.value;
+            const medIssueBlock = evt.parentElement.parentElement.parentElement;
+            const medNameSuggestion = medIssueBlock.querySelector('.med-name-suggest');
+            if (searchKey.length === 0) {
+                medNameSuggestion.innerHTML = '';
+            } else {
+                fetch('/search/' + searchKey)
+                    .then(response => response.json())
+                    .then(function (data) {
+                        if ('name' in data) {
+                            medNameSuggestion.innerHTML = '<i>Medicine Name: ' + data['name'] + '; Available: ' + data['stock'] + '</i>';
+                        } else {
+                            medNameSuggestion.innerHTML = '';
+                        }
+                    });
+            }
+        };
+    </script>
+
+{% endblock %}
