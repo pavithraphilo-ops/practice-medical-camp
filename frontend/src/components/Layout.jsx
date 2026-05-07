@@ -38,7 +38,7 @@ const Layout = () => {
     const titles = {
       '/': 'Medicine Dispatch',
       '/dashboard': 'Medicine Dispatch',
-      '/vitals': 'Clinical Vitals',
+      '/vitals': 'Log Patient Vitals',
       '/register': 'Patient Registration',
       '/patient': 'Patient Profile',
       '/inventory': 'Stock Inventory',
@@ -80,7 +80,6 @@ const Layout = () => {
             Clinical Menu
           </p>
           <nav className="flex flex-col gap-1">
-            <SidebarLink to="/dashboard" icon={ClipboardList} label="Issue Medicine" active={location.pathname === '/dashboard'} />
             <SidebarLink to="/vitals" icon={Activity} label="Log Vitals" active={location.pathname === '/vitals'} />
             <SidebarLink to="/register" icon={UserPlus} label="Register Patient" active={location.pathname === '/register'} />
             <SidebarLink to="/patient" icon={Search} label="Patient Profile" active={location.pathname === '/patient'} />
