@@ -1,49 +1,142 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Activity, Save, CheckCircle2, User, Landmark, HeartPulse, Droplets, Thermometer, Heart } from 'lucide-react';
+import {
+  Activity, Save, CheckCircle2, User, Heart, HeartPulse,
+  Droplets, Thermometer, Clock, Calendar, Hash, Weight,
+  Ruler, Stethoscope, Pill, PlusCircle, Trash2, FileText,
+  AlertCircle, X
+} from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
 const Vitals = () => {
-  const [camps, setCamps] = useState([]);
+  // Patient Vitals state
   const [patientId, setPatientId] = useState('');
-  const [selectedCamp, setSelectedCamp] = useState('');
-  const [bloodPressure, setBloodPressure] = useState('NA');
-  const [glucose, setGlucose] = useState('NA');
-  const [haemoglobin, setHaemoglobin] = useState('NA');
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [time, setTime] = useState(() => new Date().toTimeString().slice(0, 5));
+  const [eNo, setENo] = useState('');
+  const [weight, setWeight] = useState('');
+  const [height, setHeight] = useState('');
+  const [bloodPressure, setBloodPressure] = useState('');
+  const [pulse, setPulse] = useState('');
+  const [rbs, setRbs] = useState('');
+  const [haemoglobin, setHaemoglobin] = useState('');
+  const [lastFoodTime, setLastFoodTime] = useState('');
+  const [drName, setDrName] = useState('');
+  const [drId, setDrId] = useState('');
+  const [diagnosis, setDiagnosis] = useState('');
+
+  // Medicine table state
+  const [medicines, setMedicines] = useState([
+    { msNo: '', medicine: '', strength: '', days: '', morning: '', afternoon: '', night: '', quantity: '' }
+  ]);
+
+  // UI state
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    axios.get(`${API_BASE}/camps`).then(res => setCamps(res.data));
-  }, []);
+  const addMedicineRow = () => {
+    setMedicines(prev => [
+      ...prev,
+      { msNo: '', medicine: '', strength: '', days: '', morning: '', afternoon: '', night: '', quantity: '' }
+    ]);
+  };
+
+  const removeMedicineRow = (index) => {
+    if (medicines.length <= 1) return;
+    setMedicines(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateMedicine = (index, field, value) => {
+    setMedicines(prev => prev.map((m, i) => i === index ? { ...m, [field]: value } : m));
+  };
+
+  // Auto-calculate quantity based on days × (morning + afternoon + night)
+  const calcQuantity = (med) => {
+    const days = parseInt(med.days) || 0;
+    const morning = parseInt(med.morning) || 0;
+    const afternoon = parseInt(med.afternoon) || 0;
+    const night = parseInt(med.night) || 0;
+    return days > 0 ? days * (morning + afternoon + night) : '';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!patientId) {
+      setError('Patient ID is required');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
     setLoading(true);
     try {
       await axios.post(`${API_BASE}/save_vitals`, {
         patient_id: patientId,
-        medical_camp: selectedCamp,
+        date,
+        time,
+        e_no: eNo,
+        weight,
+        height,
         blood_pressure: bloodPressure,
-        glucose: glucose,
-        haemoglobin: haemoglobin
+        pulse,
+        rbs,
+        haemoglobin,
+        last_food_time: lastFoodTime,
+        dr_name: drName,
+        dr_id: drId,
+        diagnosis,
+        medicines: medicines.filter(m => m.medicine.trim() !== '').map(m => ({
+          ...m,
+          quantity: calcQuantity(m) || m.quantity
+        }))
       });
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      setTimeout(() => setSuccess(false), 4000);
+      // Reset form
       setPatientId('');
-      setBloodPressure('NA');
-      setGlucose('NA');
-      setHaemoglobin('NA');
+      setENo('');
+      setWeight('');
+      setHeight('');
+      setBloodPressure('');
+      setPulse('');
+      setRbs('');
+      setHaemoglobin('');
+      setLastFoodTime('');
+      setDrName('');
+      setDrId('');
+      setDiagnosis('');
+      setMedicines([{ msNo: '', medicine: '', strength: '', days: '', morning: '', afternoon: '', night: '', quantity: '' }]);
     } catch (err) {
-      alert('Error saving vitals');
+      setError(err.response?.data?.message || 'Error saving vitals. Please try again.');
+      setTimeout(() => setError(''), 4000);
     } finally {
       setLoading(false);
     }
   };
 
+  // Input field component for consistency
+  const VitalInput = ({ icon: Icon, label, value, onChange, type = 'text', placeholder = '', iconColor = 'text-teal-500', required = false, colSpan = '' }) => (
+    <div className={`space-y-2 ${colSpan}`}>
+      <label className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+        {Icon && <Icon size={11} className={iconColor} strokeWidth={2.5} />}
+        {label}
+        {required && <span className="text-rose-400">*</span>}
+      </label>
+      <input
+        type={type}
+        required={required}
+        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-300 focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 outline-none transition-all shadow-sm hover:border-slate-300"
+        placeholder={placeholder}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+      />
+    </div>
+  );
+
   return (
-    <div className="max-w-3xl mx-auto py-6 space-y-8">
+    <div className="max-w-7xl mx-auto py-6 space-y-8">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -54,118 +147,270 @@ const Vitals = () => {
             <div className="p-2.5 bg-teal-50 rounded-xl border border-teal-200">
               <Activity className="text-teal-600" size={24} strokeWidth={2.5} />
             </div>
-            <h3 className="text-3xl font-black text-slate-800 tracking-tight">Vitals Recording</h3>
+            <h3 className="text-3xl font-black text-slate-800 tracking-tight">Log Patient Vitals</h3>
           </div>
-          <p className="text-slate-400 text-sm font-bold ml-[52px]">Diagnostic Data Acquisition</p>
+          <p className="text-slate-400 text-sm font-bold ml-[52px]">Record vitals, diagnosis & issue medicines</p>
         </div>
-        {success && (
-          <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-5 py-3 rounded-xl border border-emerald-200 shadow-sm animate-bounce">
-            <CheckCircle2 size={18} strokeWidth={3} />
-            <span className="text-xs font-black uppercase tracking-widest">Entry Logged</span>
-          </div>
-        )}
+
+        {/* Success / Error badges */}
+        <div className="flex gap-3">
+          {success && (
+            <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-5 py-3 rounded-xl border border-emerald-200 shadow-sm animate-bounce">
+              <CheckCircle2 size={18} strokeWidth={3} />
+              <span className="text-xs font-black uppercase tracking-widest">Record Saved</span>
+            </div>
+          )}
+          {error && (
+            <div className="flex items-center gap-2 text-rose-600 bg-rose-50 px-5 py-3 rounded-xl border border-rose-200 shadow-sm">
+              <AlertCircle size={18} strokeWidth={3} />
+              <span className="text-xs font-black uppercase tracking-widest">{error}</span>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="glass-panel-light p-10 relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 via-teal-400 to-emerald-400" />
+      {/* Main Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
 
-        <form onSubmit={handleSubmit} className="space-y-10">
-          {/* Identity Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6 bg-slate-50/50 rounded-2xl border border-slate-100">
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                <User size={12} className="text-teal-500" /> Patient Identification
-              </label>
-              <input
-                type="number"
-                required
-                className="w-full bg-white border border-slate-200 rounded-xl px-5 py-4 text-xl font-black text-slate-800 placeholder:text-slate-300 focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 outline-none transition-all shadow-sm"
-                placeholder="ID #"
-                value={patientId}
-                onChange={e => setPatientId(e.target.value)}
-              />
+        {/* ═══════════ PATIENT VITALS SECTION ═══════════ */}
+        <div className="glass-panel-light p-8 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 via-teal-400 to-emerald-400" />
+
+          {/* Section title */}
+          <div className="flex items-center gap-2 mb-6">
+            <div className="p-1.5 bg-teal-50 rounded-lg border border-teal-100">
+              <Stethoscope size={16} className="text-teal-600" strokeWidth={2.5} />
             </div>
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                <Landmark size={12} className="text-teal-500" /> Camp Session
-              </label>
-              <select
-                required
-                className="w-full bg-white border border-slate-200 rounded-xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 outline-none transition-all appearance-none cursor-pointer shadow-sm"
-                value={selectedCamp}
-                onChange={e => setSelectedCamp(e.target.value)}
-              >
-                <option value="">Select Session...</option>
-                {camps.map(camp => (
-                  <option key={camp.id} value={camp.id}>{camp.venue} • {camp.number}</option>
-                ))}
-              </select>
-            </div>
+            <h4 className="text-sm font-black text-slate-700 uppercase tracking-wider">Patient Information & Vitals</h4>
           </div>
 
-          {/* Vitals Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="glass-panel-light p-6 space-y-4 hover:border-teal-500/30 transition-all group shadow-sm bg-white/40">
-              <label className="flex items-center gap-2 text-[10px] font-black text-teal-600 uppercase tracking-widest">
-                <HeartPulse size={14} strokeWidth={2.5} /> Blood Pressure
-              </label>
-              <input
-                type="text"
-                className="w-full bg-transparent border-b-2 border-slate-100 py-2 text-2xl font-black text-slate-800 focus:border-teal-500 outline-none transition-colors"
-                value={bloodPressure}
-                onChange={e => setBloodPressure(e.target.value)}
-              />
-              <p className="text-[10px] text-slate-400 font-bold uppercase">Standard: 120/80</p>
-            </div>
-
-            <div className="glass-panel-light p-6 space-y-4 hover:border-amber-500/30 transition-all group shadow-sm bg-white/40">
-              <label className="flex items-center gap-2 text-[10px] font-black text-amber-600 uppercase tracking-widest">
-                <Droplets size={14} strokeWidth={2.5} /> Glucose (Sugar)
-              </label>
-              <input
-                type="text"
-                className="w-full bg-transparent border-b-2 border-slate-100 py-2 text-2xl font-black text-slate-800 focus:border-amber-500 outline-none transition-colors"
-                value={glucose}
-                onChange={e => setGlucose(e.target.value)}
-              />
-              <p className="text-[10px] text-slate-400 font-bold uppercase">Standard: 70-100</p>
-            </div>
-
-            <div className="glass-panel-light p-6 space-y-4 hover:border-rose-500/30 transition-all group shadow-sm bg-white/40">
-              <label className="flex items-center gap-2 text-[10px] font-black text-rose-600 uppercase tracking-widest">
-                <Thermometer size={14} strokeWidth={2.5} /> Haemoglobin
-              </label>
-              <input
-                type="text"
-                className="w-full bg-transparent border-b-2 border-slate-100 py-2 text-2xl font-black text-slate-800 focus:border-rose-500 outline-none transition-colors"
-                value={haemoglobin}
-                onChange={e => setHaemoglobin(e.target.value)}
-              />
-              <p className="text-[10px] text-slate-400 font-bold uppercase">Standard: 12-16</p>
-            </div>
+          {/* Row 1: Patient ID, Date, Time, E.No */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-5">
+            <VitalInput icon={User} label="Patient ID" value={patientId} onChange={setPatientId} placeholder="Enter ID" required iconColor="text-blue-500" />
+            <VitalInput icon={Calendar} label="Date" value={date} onChange={setDate} type="date" iconColor="text-indigo-500" />
+            <VitalInput icon={Clock} label="Time" value={time} onChange={setTime} type="time" iconColor="text-violet-500" />
+            <VitalInput icon={Hash} label="E.No" value={eNo} onChange={setENo} placeholder="Entry No." iconColor="text-cyan-500" />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full relative overflow-hidden bg-teal-600 hover:bg-teal-700 text-white h-16 rounded-xl transition-all shadow-lg shadow-teal-100 group active:scale-[0.98]"
-          >
-            <div className="relative flex items-center justify-center gap-3">
-              {loading ? (
-                <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <Save size={20} strokeWidth={2.5} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                  <span className="text-sm font-black uppercase tracking-[0.2em]">Commit Vital Record</span>
-                </>
-              )}
+          {/* Row 2: WT, HT, B.P, PULSE */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-5">
+            <VitalInput icon={Weight} label="WT (kg)" value={weight} onChange={setWeight} placeholder="Weight" iconColor="text-amber-500" />
+            <VitalInput icon={Ruler} label="HT (cm)" value={height} onChange={setHeight} placeholder="Height" iconColor="text-orange-500" />
+            <VitalInput icon={HeartPulse} label="B.P" value={bloodPressure} onChange={setBloodPressure} placeholder="e.g. 120/80" iconColor="text-rose-500" />
+            <VitalInput icon={Activity} label="Pulse" value={pulse} onChange={setPulse} placeholder="BPM" iconColor="text-pink-500" />
+          </div>
+
+          {/* Row 3: RBS, Hemo, Last Food/Time */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-5">
+            <VitalInput icon={Droplets} label="RBS" value={rbs} onChange={setRbs} placeholder="Blood Sugar" iconColor="text-amber-500" />
+            <VitalInput icon={Thermometer} label="Hemo" value={haemoglobin} onChange={setHaemoglobin} placeholder="Haemoglobin" iconColor="text-rose-500" />
+            <VitalInput icon={Clock} label="Last Food / Time" value={lastFoodTime} onChange={setLastFoodTime} placeholder="e.g. 8:00 AM" colSpan="md:col-span-2" iconColor="text-emerald-500" />
+          </div>
+
+          {/* Row 4: Dr Name, Dr ID */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+            <VitalInput icon={Stethoscope} label="Dr. Name" value={drName} onChange={setDrName} placeholder="Doctor Name" iconColor="text-blue-500" />
+            <VitalInput icon={Hash} label="Dr. ID" value={drId} onChange={setDrId} placeholder="Doctor ID" iconColor="text-indigo-500" />
+          </div>
+
+          {/* Row 5: Diagnosis & Tests */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+              <FileText size={11} className="text-teal-500" strokeWidth={2.5} />
+              Diagnosis & Tests
+            </label>
+            <textarea
+              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-300 focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 outline-none transition-all shadow-sm hover:border-slate-300 min-h-[80px] resize-y"
+              placeholder="Enter diagnosis details, prescribed tests..."
+              value={diagnosis}
+              onChange={e => setDiagnosis(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* ═══════════ ISSUE MEDICINE SECTION ═══════════ */}
+        <div className="glass-panel-light p-8 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-green-400 to-teal-400" />
+
+          {/* Section title + Add button */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-emerald-50 rounded-lg border border-emerald-100">
+                <Pill size={16} className="text-emerald-600" strokeWidth={2.5} />
+              </div>
+              <h4 className="text-sm font-black text-slate-700 uppercase tracking-wider">Issue Medicine</h4>
+              <span className="ml-2 px-2.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full border border-emerald-100">
+                {medicines.length} {medicines.length === 1 ? 'item' : 'items'}
+              </span>
             </div>
-          </button>
-        </form>
-      </div>
+            <button
+              type="button"
+              onClick={addMedicineRow}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[11px] font-black uppercase tracking-wider transition-all shadow-lg shadow-emerald-100 active:scale-95"
+            >
+              <PlusCircle size={16} strokeWidth={2.5} />
+              Add Medicine
+            </button>
+          </div>
+
+          {/* Medicine Table */}
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+                  <th className="px-4 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] w-20 text-center">M.S.No</th>
+                  <th className="px-4 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] min-w-[200px]">Medicines</th>
+                  <th className="px-4 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] w-24 text-center">Strength</th>
+                  <th className="px-4 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] w-20 text-center">Days</th>
+                  <th className="px-4 py-4 text-[10px] font-black text-amber-500 uppercase tracking-[0.15em] w-20 text-center">Morning</th>
+                  <th className="px-4 py-4 text-[10px] font-black text-blue-500 uppercase tracking-[0.15em] w-24 text-center">Afternoon</th>
+                  <th className="px-4 py-4 text-[10px] font-black text-indigo-500 uppercase tracking-[0.15em] w-20 text-center">Night</th>
+                  <th className="px-4 py-4 text-[10px] font-black text-emerald-600 uppercase tracking-[0.15em] w-24 text-center">Quantity</th>
+                  <th className="px-4 py-4 w-12"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {medicines.map((med, index) => {
+                  const autoQty = calcQuantity(med);
+                  return (
+                    <tr key={index} className="hover:bg-emerald-50/30 transition-all group">
+                      {/* M.S.No */}
+                      <td className="px-3 py-3">
+                        <input
+                          type="text"
+                          className="w-full bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-100 rounded-lg px-2 py-2.5 text-sm font-black text-teal-700 text-center placeholder:text-teal-300 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all shadow-sm"
+                          placeholder="ID"
+                          value={med.msNo}
+                          onChange={e => updateMedicine(index, 'msNo', e.target.value)}
+                        />
+                      </td>
+
+                      {/* Medicine Name */}
+                      <td className="px-3 py-3">
+                        <input
+                          type="text"
+                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm font-bold text-slate-800 placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+                          placeholder="Medicine name"
+                          value={med.medicine}
+                          onChange={e => updateMedicine(index, 'medicine', e.target.value)}
+                        />
+                      </td>
+
+                      {/* Strength */}
+                      <td className="px-3 py-3">
+                        <input
+                          type="text"
+                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm font-bold text-slate-800 text-center placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+                          placeholder="mg"
+                          value={med.strength}
+                          onChange={e => updateMedicine(index, 'strength', e.target.value)}
+                        />
+                      </td>
+
+                      {/* Days */}
+                      <td className="px-3 py-3">
+                        <input
+                          type="number"
+                          min="0"
+                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm font-bold text-slate-800 text-center placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+                          placeholder="0"
+                          value={med.days}
+                          onChange={e => updateMedicine(index, 'days', e.target.value)}
+                        />
+                      </td>
+
+                      {/* Morning */}
+                      <td className="px-3 py-3">
+                        <input
+                          type="number"
+                          min="0"
+                          className="w-full bg-amber-50/50 border border-amber-200 rounded-lg px-3 py-2.5 text-sm font-bold text-slate-800 text-center placeholder:text-amber-300 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all"
+                          placeholder="0"
+                          value={med.morning}
+                          onChange={e => updateMedicine(index, 'morning', e.target.value)}
+                        />
+                      </td>
+
+                      {/* Afternoon */}
+                      <td className="px-3 py-3">
+                        <input
+                          type="number"
+                          min="0"
+                          className="w-full bg-blue-50/50 border border-blue-200 rounded-lg px-3 py-2.5 text-sm font-bold text-slate-800 text-center placeholder:text-blue-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                          placeholder="0"
+                          value={med.afternoon}
+                          onChange={e => updateMedicine(index, 'afternoon', e.target.value)}
+                        />
+                      </td>
+
+                      {/* Night */}
+                      <td className="px-3 py-3">
+                        <input
+                          type="number"
+                          min="0"
+                          className="w-full bg-indigo-50/50 border border-indigo-200 rounded-lg px-3 py-2.5 text-sm font-bold text-slate-800 text-center placeholder:text-indigo-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                          placeholder="0"
+                          value={med.night}
+                          onChange={e => updateMedicine(index, 'night', e.target.value)}
+                        />
+                      </td>
+
+                      {/* Quantity (auto-calculated) */}
+                      <td className="px-3 py-3">
+                        <div className="w-full bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2.5 text-sm font-black text-emerald-700 text-center min-h-[42px] flex items-center justify-center">
+                          {autoQty || (
+                            <span className="text-emerald-300 font-bold">—</span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Delete */}
+                      <td className="px-2 py-3">
+                        <button
+                          type="button"
+                          onClick={() => removeMedicineRow(index)}
+                          disabled={medicines.length <= 1}
+                          className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                          title="Remove row"
+                        >
+                          <Trash2 size={16} strokeWidth={2} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Quick add hint */}
+          <div className="mt-4 flex items-center gap-2 text-[10px] text-slate-400 font-bold ml-1">
+            <AlertCircle size={12} />
+            <span>Quantity is auto-calculated as <span className="text-slate-500">Days × (Morning + Afternoon + Night)</span></span>
+          </div>
+        </div>
+
+        {/* ═══════════ SUBMIT BUTTON ═══════════ */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full relative overflow-hidden bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white h-16 rounded-2xl transition-all shadow-xl shadow-teal-200/50 group active:scale-[0.99]"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+          <div className="relative flex items-center justify-center gap-3">
+            {loading ? (
+              <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                <Save size={20} strokeWidth={2.5} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                <span className="text-sm font-black uppercase tracking-[0.2em]">Save Patient Record & Issue Medicines</span>
+              </>
+            )}
+          </div>
+        </button>
+      </form>
     </div>
   );
 };
 
 export default Vitals;
-
