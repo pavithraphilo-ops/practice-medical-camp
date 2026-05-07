@@ -7,6 +7,7 @@ import Inventory from './pages/Inventory';
 import PatientRegistration from './pages/PatientRegistration';
 import AdminLogin from './pages/AdminLogin';
 import MedicineEntry from './pages/MedicineEntry';
+import CampRegistration from './pages/CampRegistration';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/register" element={<PatientRegistration />} />
           <Route path="/medicine-entry" element={<MedicineEntry />} />
+          <Route path="/camp-registration" element={<CampRegistration />} />
         </Route>
       </Routes>
     </Router>
