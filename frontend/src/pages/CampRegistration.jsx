@@ -145,7 +145,7 @@ const CampRegistration = () => {
           <div className="space-y-3">
             <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
               <Hash size={12} className="text-teal-500" strokeWidth={2.5} />
-              Camp ID
+              Camp Number
               <span className="text-rose-400">*</span>
             </label>
             <input
