@@ -41,6 +41,14 @@ class Issue(models.Model):
     camp = models.ForeignKey(MedicalCamp, on_delete=models.CASCADE)
     medicine = models.ForeignKey(Medicine, on_delete=models.CASCADE)
     qty = models.IntegerField()
+    
+    # New clinical fields to link with Vitals
+    vitals_record = models.ForeignKey('PatientVitals', on_delete=models.CASCADE, null=True, blank=True, related_name='issued_medicines')
+    strength = models.CharField(max_length=100, null=True, blank=True)
+    days = models.IntegerField(default=0)
+    morning = models.IntegerField(default=0)
+    afternoon = models.IntegerField(default=0)
+    night = models.IntegerField(default=0)
 
     def __str__(self):
         return f"Issued {self.qty} of {self.medicine.name} to {self.patient_id} at {self.camp}"
@@ -58,6 +66,32 @@ class Vitals(models.Model):
 
     def __str__(self):
         return f"Patient : {self.patient_id}, Camp : {self.camp}, Blood Pressure : {self.blood_pressure}, Sugar : {self.glucose}, Haemoglobin : {self.haemoglobin}"
+
+class PatientVitals(models.Model):
+    class Meta:
+        verbose_name_plural = "Patient Vitals"
+        db_table = 'patient_vitals'
+
+    patient_id = models.IntegerField()
+    camp = models.ForeignKey(MedicalCamp, on_delete=models.CASCADE)
+    date = models.DateField(null=True, blank=True)
+    time = models.TimeField(null=True, blank=True)
+    e_no = models.CharField(max_length=100, null=True, blank=True)
+    weight = models.CharField(max_length=100, null=True, blank=True)
+    height = models.CharField(max_length=100, null=True, blank=True)
+    blood_pressure = models.CharField(max_length=100, null=True, blank=True)
+    pulse = models.CharField(max_length=100, null=True, blank=True)
+    glucose = models.CharField(max_length=100, null=True, blank=True)
+    rbs = models.CharField(max_length=100, null=True, blank=True)
+    haemoglobin = models.CharField(max_length=100, null=True, blank=True)
+    last_food_time = models.CharField(max_length=200, null=True, blank=True)
+    dr_name = models.CharField(max_length=500, null=True, blank=True)
+    dr_id = models.CharField(max_length=100, null=True, blank=True)
+    diagnosis = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Patient {self.patient_id} - {self.date} at {self.camp}"
 
 class MedicalTest(models.Model):
     name = models.CharField(max_length=1000)

@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from .forms import IssueForm, VitalsForm
-from .models import Medicine, MedicalCamp, Issue, MedicineCategory, Vitals, MedicalTest, TestIssue, Patient, CampWiseStock
+from .models import Medicine, MedicalCamp, Issue, MedicineCategory, Vitals, PatientVitals, MedicalTest, TestIssue, Patient, CampWiseStock
 from django.core import serializers
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -297,14 +297,69 @@ def api_save_vitals(request):
         patient_id = data.get('patient_id')
         camp_id = data.get('medical_camp')
         
-        v, created = Vitals.objects.get_or_create(
-            patient_id=patient_id, 
-            camp_id=camp_id
+        # Process Medicines and Create Vitals Records
+        med_issues = data.get('medicines', [])
+        camp = MedicalCamp.objects.get(id=camp_id)
+        
+        # 1. Save Vitals to the PatientVitals table (Only once)
+        v = PatientVitals.objects.create(
+            patient_id=patient_id,
+            camp_id=camp_id,
+            date=data.get('date'),
+            time=data.get('time'),
+            e_no=data.get('e_no'),
+            weight=data.get('weight'),
+            height=data.get('height'),
+            blood_pressure=data.get('blood_pressure'),
+            pulse=data.get('pulse'),
+            glucose=data.get('glucose'),
+            rbs=data.get('rbs'),
+            haemoglobin=data.get('haemoglobin'),
+            last_food_time=data.get('last_food_time'),
+            dr_name=data.get('dr_name'),
+            dr_id=data.get('dr_id'),
+            diagnosis=data.get('diagnosis')
         )
-        v.blood_pressure = data.get('blood_pressure', 'NA')
-        v.glucose = data.get('glucose', 'NA')
-        v.haemoglobin = data.get('haemoglobin', 'NA')
-        v.save()
+
+        # 2. Process Medicines and Create Issues (Linked to the Vitals record)
+        for item in med_issues:
+            med_id = item.get('msNo')
+            med_name = item.get('medicine')
+            qty = int(item.get('quantity', 0))
+            
+            if med_id and qty > 0:
+                medicine = Medicine.objects.filter(uqid=med_id).first()
+                if medicine:
+                    # Check CampWiseStock availability
+                    try:
+                        camp_stock = CampWiseStock.objects.get(camp=camp, medicine=medicine)
+                        if camp_stock.remaining_stock() < qty:
+                            # If stock is insufficient, we'll roll back (delete the vitals record we just made)
+                            v.delete() 
+                            return JsonResponse({
+                                'status': 'error', 
+                                'message': f'Insufficient stock in this camp for {medicine.name}. Available: {camp_stock.remaining_stock()}'
+                            }, status=400)
+                    except CampWiseStock.DoesNotExist:
+                        v.delete()
+                        return JsonResponse({
+                            'status': 'error', 
+                            'message': f'Stock not allocated to this camp for {medicine.name}'
+                        }, status=400)
+
+                    Issue.objects.create(
+                        patient_id=patient_id,
+                        camp=camp,
+                        medicine=medicine,
+                        qty=qty,
+                        # Link to the visit
+                        vitals_record=v,
+                        strength=item.get('strength'),
+                        days=int(item.get('days') or 0),
+                        morning=int(item.get('morning') or 0),
+                        afternoon=int(item.get('afternoon') or 0),
+                        night=int(item.get('night') or 0)
+                    )
         
         return JsonResponse({'status': 'success'})
     except Exception as e:
@@ -452,3 +507,53 @@ def api_allocate_to_camp(request):
             'status': 'error',
             'message': str(e)
         }, status=400)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_return_to_warehouse(request):
+    try:
+        data = json.loads(request.body)
+        camp_id = data.get('camp_id')
+        med_id = data.get('med_id') # uqid
+
+        camp_stock = CampWiseStock.objects.get(camp_id=camp_id, medicine__uqid=med_id)
+        remaining = camp_stock.remaining_stock()
+
+        if remaining > 0:
+            # 1. Add back to main warehouse
+            medicine = camp_stock.medicine
+            medicine.stock += remaining
+            medicine.save()
+
+        # 2. Reset camp stock
+        camp_stock.allocated_stock = 0
+        camp_stock.used_stock = 0
+        camp_stock.save()
+
+        return JsonResponse({'status': 'success', 'new_total': medicine.stock})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_close_camp_session(request):
+    try:
+        data = json.loads(request.body)
+        camp_id = data.get('camp_id')
+        
+        camp_stocks = CampWiseStock.objects.filter(camp_id=camp_id)
+        
+        for cs in camp_stocks:
+            remaining = cs.remaining_stock()
+            if remaining > 0:
+                medicine = cs.medicine
+                medicine.stock += remaining
+                medicine.save()
+            
+            cs.allocated_stock = 0
+            cs.used_stock = 0
+            cs.save()
+
+        return JsonResponse({'status': 'success', 'message': 'Camp session closed and stock returned to warehouse'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)

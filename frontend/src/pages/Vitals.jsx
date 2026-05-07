@@ -4,10 +4,29 @@ import {
   Activity, Save, CheckCircle2, User, Heart, HeartPulse,
   Droplets, Thermometer, Clock, Calendar, Hash, Weight,
   Ruler, Stethoscope, Pill, PlusCircle, Trash2, FileText,
-  AlertCircle, X
+  AlertCircle, X, Landmark
 } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
+
+// Input field component for consistency - MOVED OUTSIDE to prevent re-mounting bug
+const VitalInput = ({ icon: Icon, label, value, onChange, type = 'text', placeholder = '', iconColor = 'text-teal-500', required = false, colSpan = '' }) => (
+  <div className={`space-y-2 ${colSpan}`}>
+    <label className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+      {Icon && <Icon size={11} className={iconColor} strokeWidth={2.5} />}
+      {label}
+      {required && <span className="text-rose-400">*</span>}
+    </label>
+    <input
+      type={type}
+      required={required}
+      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-300 focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 outline-none transition-all shadow-sm hover:border-slate-300"
+      placeholder={placeholder}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+    />
+  </div>
+);
 
 const Vitals = () => {
   // Patient Vitals state
@@ -25,16 +44,35 @@ const Vitals = () => {
   const [drName, setDrName] = useState('');
   const [drId, setDrId] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
+  const [selectedCamp, setSelectedCamp] = useState('');
+  const [camps, setCamps] = useState([]);
 
   // Medicine table state
   const [medicines, setMedicines] = useState([
     { msNo: '', medicine: '', strength: '', days: '', morning: '', afternoon: '', night: '', quantity: '' }
   ]);
+  const [allMedicines, setAllMedicines] = useState([]); // Master list for auto-fill
+  const [campStocks, setCampStocks] = useState({}); // Real-time stock for selected camp (Object)
 
   // UI state
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    axios.get(`${API_BASE}/camps`).then(res => setCamps(res.data));
+    axios.get(`${API_BASE}/medicines`).then(res => setAllMedicines(res.data));
+  }, []);
+
+  useEffect(() => {
+    if (selectedCamp) {
+      axios.get(`${API_BASE}/camp_stock/${selectedCamp}`).then(res => {
+        setCampStocks(res.data);
+      });
+    } else {
+      setCampStocks({});
+    }
+  }, [selectedCamp]);
 
   const addMedicineRow = () => {
     setMedicines(prev => [
@@ -49,7 +87,22 @@ const Vitals = () => {
   };
 
   const updateMedicine = (index, field, value) => {
-    setMedicines(prev => prev.map((m, i) => i === index ? { ...m, [field]: value } : m));
+    setMedicines(prev => prev.map((m, i) => {
+      if (i !== index) return m;
+      
+      let updatedMed = { ...m, [field]: value };
+      
+      // Auto-fill logic when M.S.No (UQID) is entered
+      if (field === 'msNo' && value !== '') {
+        const foundMed = allMedicines.find(am => am.uqid === parseInt(value));
+        if (foundMed) {
+          updatedMed.medicine = foundMed.name;
+          updatedMed.strength = foundMed.formulation || ''; // Use formulation as strength if available
+        }
+      }
+      
+      return updatedMed;
+    }));
   };
 
   // Auto-calculate quantity based on days × (morning + afternoon + night)
@@ -73,6 +126,7 @@ const Vitals = () => {
     try {
       await axios.post(`${API_BASE}/save_vitals`, {
         patient_id: patientId,
+        medical_camp: selectedCamp,
         date,
         time,
         e_no: eNo,
@@ -115,24 +169,7 @@ const Vitals = () => {
     }
   };
 
-  // Input field component for consistency
-  const VitalInput = ({ icon: Icon, label, value, onChange, type = 'text', placeholder = '', iconColor = 'text-teal-500', required = false, colSpan = '' }) => (
-    <div className={`space-y-2 ${colSpan}`}>
-      <label className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-        {Icon && <Icon size={11} className={iconColor} strokeWidth={2.5} />}
-        {label}
-        {required && <span className="text-rose-400">*</span>}
-      </label>
-      <input
-        type={type}
-        required={required}
-        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-300 focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 outline-none transition-all shadow-sm hover:border-slate-300"
-        placeholder={placeholder}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-      />
-    </div>
-  );
+
 
   return (
     <div className="max-w-7xl mx-auto py-6 space-y-8">
@@ -182,6 +219,26 @@ const Vitals = () => {
               <Stethoscope size={16} className="text-teal-600" strokeWidth={2.5} />
             </div>
             <h4 className="text-sm font-black text-slate-700 uppercase tracking-wider">Patient Information & Vitals</h4>
+          </div>
+
+          {/* New Row 0: Camp Selection */}
+          <div className="mb-8 p-6 bg-slate-50/50 border border-slate-100 rounded-2xl">
+            <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">
+              <Landmark size={14} className="text-teal-500" /> Active Medical Camp Session
+            </label>
+            <select
+              required
+              className="w-full bg-white border border-slate-200 rounded-xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 outline-none transition-all appearance-none cursor-pointer"
+              value={selectedCamp}
+              onChange={e => setSelectedCamp(e.target.value)}
+            >
+              <option value="">Choose the current medical camp session...</option>
+              {camps.map(camp => (
+                <option key={camp.id} value={camp.id}>
+                  {camp.venue} • Camp {camp.number} ({camp.date})
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Row 1: Patient ID, Date, Time, E.No */}
@@ -357,10 +414,25 @@ const Vitals = () => {
 
                       {/* Quantity (auto-calculated) */}
                       <td className="px-3 py-3">
-                        <div className="w-full bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2.5 text-sm font-black text-emerald-700 text-center min-h-[42px] flex items-center justify-center">
+                        <div className={`w-full border rounded-lg px-3 py-2.5 text-sm font-black text-center min-h-[42px] flex flex-col items-center justify-center transition-all ${
+                          (() => {
+                            const stockItem = campStocks[med.msNo];
+                            const remaining = stockItem ? stockItem.remaining : null;
+                            if (remaining !== null && autoQty > remaining) return 'bg-rose-50 border-rose-200 text-rose-700';
+                            return 'bg-emerald-50 border-emerald-200 text-emerald-700';
+                          })()
+                        }`}>
                           {autoQty || (
                             <span className="text-emerald-300 font-bold">—</span>
                           )}
+                          {(() => {
+                            const stockItem = campStocks[med.msNo];
+                            const remaining = stockItem ? stockItem.remaining : null;
+                            if (remaining !== null && autoQty > remaining) {
+                              return <span className="text-[8px] uppercase mt-1">Exceeds Stock ({remaining})</span>
+                            }
+                            return null;
+                          })()}
                         </div>
                       </td>
 
