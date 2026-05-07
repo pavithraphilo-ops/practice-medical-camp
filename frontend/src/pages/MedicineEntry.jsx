@@ -13,11 +13,23 @@ const MedicineEntry = () => {
   const [viewMode, setViewMode] = useState('total'); // 'total' or 'camp'
   const [campStocks, setCampStocks] = useState([]);
   const [allocateQtys, setAllocateQtys] = useState({});
+  const [camps, setCamps] = useState([]);
+  const [selectedCamp, setSelectedCamp] = useState('');
 
   useEffect(() => {
     fetchMedicines();
-    fetchCampStocks();
+    fetchCamps();
   }, []);
+
+  useEffect(() => {
+    fetchCampStocks();
+  }, [selectedCamp, medicines]);
+
+  const fetchCamps = () => {
+    axios.get(`${API_BASE}/camps`).then(res => {
+      setCamps(res.data);
+    });
+  };
 
   const fetchMedicines = () => {
     setLoading(true);
@@ -28,8 +40,24 @@ const MedicineEntry = () => {
   };
 
   const fetchCampStocks = () => {
-    axios.get(`${API_BASE}/camp_wise_stock`).then(res => {
-      setCampStocks(res.data);
+    if (!selectedCamp) {
+      setCampStocks([]);
+      return;
+    }
+    axios.get(`${API_BASE}/camp_stock/${selectedCamp}`).then(res => {
+      // Convert object {uqid: {allocated, used, remaining}} to array for mapping
+      const stocksArray = Object.keys(res.data).map(uqid => {
+        const med = medicines.find(m => m.uqid === parseInt(uqid));
+        return {
+          uqid: parseInt(uqid),
+          medication: med ? med.name : 'Unknown Medication',
+          total_stock: med ? med.stock : 0,
+          camp_stock: res.data[uqid].allocated,
+          used_stock: res.data[uqid].used,
+          remaining_stock: res.data[uqid].remaining
+        };
+      });
+      setCampStocks(stocksArray);
     });
   };
 
@@ -69,7 +97,8 @@ const MedicineEntry = () => {
     try {
       const res = await axios.post(`${API_BASE}/allocate_to_camp`, {
         uqid: uqid,
-        qty: qty
+        qty: qty,
+        camp_id: selectedCamp
       });
       
       setSuccessMsg(`Allocated ${qty} units of ${res.data.medicine_name} to Camp`);
@@ -148,6 +177,23 @@ const MedicineEntry = () => {
           <Landmark size={18} strokeWidth={2.5} />
           Camp Wise Entry
         </button>
+        
+        {viewMode === 'camp' && (
+          <div className="flex-1 max-w-xs animate-in fade-in slide-in-from-left-4">
+            <select
+              className="w-full h-full bg-white border border-slate-200 rounded-2xl px-5 py-4 text-xs font-black text-slate-600 focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 outline-none transition-all appearance-none cursor-pointer"
+              value={selectedCamp}
+              onChange={e => setSelectedCamp(e.target.value)}
+            >
+              <option value="">Select Target Camp...</option>
+              {camps.map(camp => (
+                <option key={camp.id} value={camp.id}>
+                  {camp.venue} • Camp {camp.number}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="glass-panel-light overflow-hidden relative animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -310,7 +356,7 @@ const MedicineEntry = () => {
                            />
                            <button
                              onClick={() => handleAllocate(stock.uqid)}
-                             disabled={!allocateQtys[stock.uqid] || allocateQtys[stock.uqid] <= 0 || allocateQtys[stock.uqid] > stock.total_stock}
+                             disabled={!selectedCamp || !allocateQtys[stock.uqid] || allocateQtys[stock.uqid] <= 0 || allocateQtys[stock.uqid] > stock.total_stock}
                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-100 disabled:text-slate-300 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-emerald-100 active:scale-95 flex items-center gap-2"
                            >
                              Allocate

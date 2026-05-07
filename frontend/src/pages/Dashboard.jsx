@@ -12,11 +12,22 @@ const Dashboard = () => {
   const [issues, setIssues] = useState([{ med_id: '', qty: 1, name: '', stock: 0 }]);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [campStocks, setCampStocks] = useState({}); // {uqid: {allocated, used, remaining}}
 
   useEffect(() => {
     axios.get(`${API_BASE}/camps`).then(res => setCamps(res.data));
     axios.get(`${API_BASE}/medicines`).then(res => setMedicines(res.data));
   }, []);
+
+  useEffect(() => {
+    if (selectedCamp) {
+      axios.get(`${API_BASE}/camp_stock/${selectedCamp}`).then(res => {
+        setCampStocks(res.data);
+      });
+    } else {
+      setCampStocks({});
+    }
+  }, [selectedCamp]);
 
   const addRow = () => {
     setIssues([...issues, { med_id: '', qty: 1, name: '', stock: 0 }]);
@@ -36,7 +47,9 @@ const Dashboard = () => {
       const med = medicines.find(m => m.uqid === parseInt(value));
       if (med) {
         newIssues[index].name = med.name;
-        newIssues[index].stock = med.stock;
+        // Show camp-specific stock if a camp is selected, otherwise 0
+        const campStock = campStocks[parseInt(value)];
+        newIssues[index].stock = campStock ? campStock.remaining : 0;
       } else {
         newIssues[index].name = '';
         newIssues[index].stock = 0;
