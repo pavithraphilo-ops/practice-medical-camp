@@ -10,15 +10,16 @@ import {
   LogOut,
   UserPlus,
   ClipboardList,
-  PlusSquare
+  PlusSquare,
+  Tent
 } from 'lucide-react';
 
 const SidebarLink = ({ to, icon: Icon, label, active }) => (
   <Link
     to={to}
     className={`flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all duration-200 group ${active
-        ? 'bg-teal-50 text-teal-700 border border-teal-200 shadow-sm'
-        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+      ? 'bg-teal-50 text-teal-700 border border-teal-200 shadow-sm'
+      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
       }`}
   >
     <Icon size={20} strokeWidth={2.5} className={active ? 'text-teal-600' : 'text-slate-400 group-hover:text-slate-600 group-hover:scale-110 transition-transform'} />
@@ -43,6 +44,7 @@ const Layout = () => {
       '/patient': 'Patient Profile',
       '/inventory': 'Stock Inventory',
       '/medicine-entry': 'Stock Entry',
+      '/camp-registration': 'Camp Registration',
     };
     return titles[path] || path.replace('/', '').replace('-', ' ');
   };
@@ -80,8 +82,9 @@ const Layout = () => {
             Clinical Menu
           </p>
           <nav className="flex flex-col gap-1">
-            <SidebarLink to="/vitals" icon={Activity} label="Log Vitals" active={location.pathname === '/vitals'} />
+            <SidebarLink to="/camp-registration" icon={Tent} label="Camp Registration" active={location.pathname === '/camp-registration'} />
             <SidebarLink to="/register" icon={UserPlus} label="Register Patient" active={location.pathname === '/register'} />
+            <SidebarLink to="/vitals" icon={Activity} label="Log Vitals" active={location.pathname === '/vitals'} />
             <SidebarLink to="/patient" icon={Search} label="Patient Profile" active={location.pathname === '/patient'} />
             <SidebarLink to="/inventory" icon={Pill} label="Inventory" active={location.pathname === '/inventory'} />
             <SidebarLink to="/medicine-entry" icon={PlusSquare} label="Stock Entry" active={location.pathname === '/medicine-entry'} />
@@ -103,7 +106,7 @@ const Layout = () => {
             onClick={() => { localStorage.removeItem('medicamp_username'); navigate('/login'); }}
             className="flex items-center justify-center gap-2 w-full py-2.5 text-xs font-bold text-slate-400 hover:text-red-500 bg-white rounded-lg transition-all duration-200 border border-slate-200 hover:border-red-200 hover:bg-red-50"
           >
-            <LogOut size={14} />
+            <LogOut size={15} />
             Sign Out
           </button>
         </div>

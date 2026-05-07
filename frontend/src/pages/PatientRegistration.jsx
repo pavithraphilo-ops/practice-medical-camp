@@ -81,13 +81,13 @@ function PatientRegistration() {
         if (!form.pid) { newErrors.pid = "Patient ID required"; valid = false; }
         if (!form.name) { newErrors.name = "Name required"; valid = false; }
         if (!form.age || form.age < 0 || form.age > 130) { newErrors.age = "Valid age required"; valid = false; }
-        
+
         const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
         if (!form.regdate || !dateRegex.test(form.regdate)) {
             newErrors.regdate = "Invalid date (DD/MM/YYYY)";
             valid = false;
         }
-        
+
         if (!form.camp_session) { newErrors.camp_session = "Required"; valid = false; }
         if (!form.contact) { newErrors.contact = "Required"; valid = false; }
         if (!form.address) { newErrors.address = "Required"; valid = false; }
@@ -99,7 +99,7 @@ function PatientRegistration() {
         try {
             const [d, m, y] = form.regdate.split('/');
             const apiDate = `${y}-${m}-${d}`;
-            
+
             await axios.post(`${API_BASE}/register_patient`, { ...form, regdate: apiDate });
             setSuccess(true);
             setForm({
@@ -250,7 +250,7 @@ function PatientRegistration() {
                                         onChange={(e) => handleChange("regdate", e.target.value)}
                                         className={`${errors.regdate ? inputError : inputNormal} ${!form.regdate ? 'text-slate-400' : 'text-slate-800'} pr-12`}
                                     />
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={() => dateInputRef.current.showPicker()}
                                         className="absolute right-4 top-1/2 -translate-y-1/2 text-teal-500 hover:text-teal-600 transition-colors"
@@ -258,7 +258,7 @@ function PatientRegistration() {
                                         <Calendar size={20} strokeWidth={2.5} />
                                     </button>
                                     {/* Hidden native date input for calendar picker */}
-                                    <input 
+                                    <input
                                         type="date"
                                         ref={dateInputRef}
                                         onChange={handleNativeDateChange}
