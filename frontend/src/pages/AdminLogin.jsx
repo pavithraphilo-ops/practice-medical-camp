@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ShieldCheck, Lock, User, Eye, EyeOff, Loader2, Heart } from "lucide-react";
+import cccLogo from "../assets/ccc-logo.png";
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
@@ -38,7 +39,7 @@ function AdminLogin() {
             {/* Dynamic Background Elements */}
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-teal-500/5 rounded-full blur-[120px]" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/5 rounded-full blur-[120px]" />
-            
+
             {/* Login Card */}
             <div className="relative w-full max-w-md px-4 animate-fade-in">
                 <div className="glass-panel-light p-10 relative overflow-hidden bg-white/80 backdrop-blur-xl">
@@ -46,14 +47,14 @@ function AdminLogin() {
 
                     {/* Header */}
                     <div className="text-center mb-10">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-teal-50 border border-teal-100 mb-6 group transition-all duration-500 hover:bg-teal-100">
-                            <ShieldCheck className="text-teal-600 w-8 h-8 group-hover:scale-110 transition-transform" />
+                        <div className="inline-flex items-center justify-center w-40 h-40 rounded-full bg-white border-4 border-teal-100 shadow-md mb-6 group transition-all duration-500 hover:shadow-lg hover:border-teal-300 overflow-hidden">
+                            <img src={cccLogo} alt="CCC Logo" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         </div>
                         <div className="flex items-center justify-center gap-2 mb-1">
                             <Heart size={14} className="text-teal-500" />
-                            <h1 className="text-3xl font-black text-slate-800 tracking-tight">MEDICAMP</h1>
+                            <h1 className="text-3xl font-black text-slate-800 tracking-tight">SWASTH</h1>
                         </div>
-                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">Institutional Portal Access</p>
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">MEDICAL CAMP MANAGEMENT SYSTEM</p>
                     </div>
 
                     {/* Form */}
@@ -138,7 +139,7 @@ function AdminLogin() {
 
                 {/* Footer Info */}
                 <p className="text-center mt-8 text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">
-                    Institutional Analytics Framework
+                    HEALTH IS HAPPINESS
                 </p>
             </div>
 
@@ -156,4 +157,3 @@ function AdminLogin() {
 }
 
 export default AdminLogin;
-
