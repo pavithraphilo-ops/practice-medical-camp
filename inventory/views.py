@@ -262,8 +262,20 @@ def api_issue_medicine(request):
             qty = int(item.get('qty', 0))
             if med_id and qty > 0:
                 medicine = Medicine.objects.get(uqid=med_id)
-                if medicine.stock < qty:
-                    return JsonResponse({'status': 'error', 'message': f'Insufficient stock for {medicine.name}. Available: {medicine.stock}'}, status=400)
+                
+                # Check CampWiseStock availability
+                try:
+                    camp_stock = CampWiseStock.objects.get(camp=camp, medicine=medicine)
+                    if camp_stock.remaining_stock() < qty:
+                        return JsonResponse({
+                            'status': 'error', 
+                            'message': f'Insufficient stock in this camp for {medicine.name}. Available: {camp_stock.remaining_stock()}'
+                        }, status=400)
+                except CampWiseStock.DoesNotExist:
+                    return JsonResponse({
+                        'status': 'error', 
+                        'message': f'Stock not allocated to this camp for {medicine.name}'
+                    }, status=400)
                 
                 Issue.objects.create(
                     patient_id=patient_id,
@@ -271,8 +283,7 @@ def api_issue_medicine(request):
                     medicine=medicine,
                     qty=qty
                 )
-                medicine.stock -= qty
-                medicine.save()
+                # The CampWiseStock.used_stock is now handled by signals automatically!
         
         return JsonResponse({'status': 'success'})
     except Exception as e:
@@ -364,46 +375,80 @@ def api_update_medicine_stock(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 def api_get_camp_wise_stock(request):
-    stocks = CampWiseStock.objects.all().order_by('uqid')
+
+    stocks = CampWiseStock.objects.all()
+
     data = []
+
     for s in stocks:
         data.append({
-            'uqid': s.uqid,
-            'medication': s.medication,
-            'total_stock': s.total_stock,
-            'camp_stock': s.camp_stock
+            'uqid': s.medicine.uqid,
+            'medication': s.medicine.name,
+            'total_stock': s.medicine.stock,
+            'camp_stock': s.allocated_stock,
+            'camp': str(s.camp),
+            'camp_id': s.camp.id,
+            'used_stock': s.used_stock,
+            'remaining_stock': s.remaining_stock()
         })
+
     return JsonResponse(data, safe=False)
+
+def api_get_specific_camp_stock(request, camp_id):
+    stocks = CampWiseStock.objects.filter(camp_id=camp_id)
+    data = {}
+    for s in stocks:
+        data[s.medicine.uqid] = {
+            'allocated': s.allocated_stock,
+            'used': s.used_stock,
+            'remaining': s.remaining_stock()
+        }
+    return JsonResponse(data)
 
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_allocate_to_camp(request):
+
     try:
+
         data = json.loads(request.body)
+
+        camp_id = data.get('camp_id')
+
         uqid = data.get('uqid')
+
         qty = int(data.get('qty', 0))
-        
+
         medicine = Medicine.objects.get(uqid=uqid)
-        camp_info = CampWiseStock.objects.get(medicine=medicine)
-        
+
         if medicine.stock < qty:
-             return JsonResponse({'status': 'error', 'message': 'Insufficient total stock'}, status=400)
-             
-        # Update main stock
+
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Insufficient stock'
+            }, status=400)
+
+        camp_stock = CampWiseStock.objects.get(
+            camp_id=camp_id,
+            medicine=medicine
+        )
+
         medicine.stock -= qty
-        medicine.save() # Triggers signal, but camp_info in memory is still old
-        
-        # Update camp stock and sync total_stock manually to avoid overwrite
-        camp_info.total_stock = medicine.stock
-        camp_info.camp_stock += qty
-        camp_info.save()
-        
+        medicine.save()
+
+        camp_stock.allocated_stock += qty
+        camp_stock.save()
+
         return JsonResponse({
             'status': 'success',
+            'medicine_name': medicine.name,
             'new_total_stock': medicine.stock,
-            'new_camp_stock': camp_info.camp_stock,
-            'medicine_name': medicine.name
+            'new_camp_stock': camp_stock.allocated_stock
         })
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
+    except Exception as e:
+
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=400)
