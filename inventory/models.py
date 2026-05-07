@@ -90,29 +90,35 @@ class Patient(models.Model):
         return f"{self.patient_id} - {self.patient_name or 'No Name'}"
 
 class CampWiseStock(models.Model):
-    medicine = models.OneToOneField(Medicine, on_delete=models.CASCADE, primary_key=True, related_name='camp_wise_info')
-    uqid = models.IntegerField(unique=True)
-    medication = models.CharField(max_length=2000)
-    total_stock = models.IntegerField()
-    camp_stock = models.IntegerField(default=0)
+
+    camp = models.ForeignKey(
+        MedicalCamp,
+        on_delete=models.CASCADE,
+        related_name='camp_stocks'
+    )
+
+    medicine = models.ForeignKey(
+        Medicine,
+        on_delete=models.CASCADE,
+        related_name='camp_stocks'
+    )
+
+    allocated_stock = models.IntegerField(default=0)
+
+    used_stock = models.IntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('camp', 'medicine')
+
+    def remaining_stock(self):
+        return self.allocated_stock - self.used_stock
 
     def __str__(self):
-        return f"{self.medication} - Camp Stock: {self.camp_stock} / Total: {self.total_stock}"
-
-# Signals to keep CampWiseStock in sync with Medicine
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-@receiver(post_save, sender=Medicine)
-def sync_camp_wise_stock(sender, instance, created, **kwargs):
-    CampWiseStock.objects.update_or_create(
-        medicine=instance,
-        defaults={
-            'uqid': instance.uqid,
-            'medication': instance.name,
-            'total_stock': instance.stock,
-            # camp_stock stays as is if it already exists, defaults to 0 if created
-        }
-    )
-        
-        
+        return (
+            f"{self.camp} - "
+            f"{self.medicine.name} - "
+            f"Allocated: {self.allocated_stock}, "
+            f"Used: {self.used_stock}"
+        )
