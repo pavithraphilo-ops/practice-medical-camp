@@ -11,7 +11,8 @@ import {
   UserPlus,
   ClipboardList,
   PlusSquare,
-  Tent
+  Tent,
+  LayoutDashboard
 } from 'lucide-react';
 
 const SidebarLink = ({ to, icon: Icon, label, active }) => (
@@ -38,7 +39,7 @@ const Layout = () => {
     const path = location.pathname;
     const titles = {
       '/': 'Medicine Dispatch',
-      '/dashboard': 'Medicine Dispatch',
+      '/dashboard': 'Dashboard',
       '/vitals': 'Log Patient Vitals',
       '/register': 'Patient Registration',
       '/patient': 'Patient Profile',
@@ -83,9 +84,8 @@ const Layout = () => {
           </p>
           <nav className="flex flex-col gap-1">
             <SidebarLink to="/camp-registration" icon={Tent} label="Camp Registration" active={location.pathname === '/camp-registration'} />
-            <SidebarLink to="/register" icon={UserPlus} label="Register Patient" active={location.pathname === '/register'} />
+            <SidebarLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" active={location.pathname === '/dashboard'} />
             <SidebarLink to="/vitals" icon={Activity} label="Log Vitals" active={location.pathname === '/vitals'} />
-            <SidebarLink to="/patient" icon={Search} label="Patient Profile" active={location.pathname === '/patient'} />
             <SidebarLink to="/inventory" icon={Pill} label="Inventory" active={location.pathname === '/inventory'} />
             <SidebarLink to="/medicine-entry" icon={PlusSquare} label="Stock Entry" active={location.pathname === '/medicine-entry'} />
           </nav>
