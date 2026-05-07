@@ -25,4 +25,7 @@ urlpatterns = [
     path('api/camp_wise_stock', api_get_camp_wise_stock),
     path('api/camp_stock/<int:camp_id>', api_get_specific_camp_stock),
     path('api/allocate_to_camp', api_allocate_to_camp),
+    path('api/return_to_warehouse', api_return_to_warehouse),
+    path('api/close_camp_session', api_close_camp_session),
+    path('api/register_camp', api_register_camp),
 ]

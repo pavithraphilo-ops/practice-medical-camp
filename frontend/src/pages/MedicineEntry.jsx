@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Pill, Search, PackageOpen, Filter, Box, PlusCircle, CheckCircle2, Heart, Landmark } from 'lucide-react';
+import { Pill, Search, PackageOpen, Filter, Box, PlusCircle, CheckCircle2, Heart, Landmark, RefreshCcw, Ban } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
@@ -107,13 +107,44 @@ const MedicineEntry = () => {
       
       // Update both views
       setMedicines(prev => prev.map(m => m.uqid === uqid ? { ...m, stock: res.data.new_total_stock } : m));
-      setCampStocks(prev => prev.map(s => s.uqid === uqid ? { 
-        ...s, 
-        total_stock: res.data.new_total_stock,
-        camp_stock: res.data.new_camp_stock
-      } : s));
+      fetchCampStocks(); // Refresh to get correct used/remaining
     } catch (err) {
       alert('Error allocating stock: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleReturn = async (uqid) => {
+    if (!selectedCamp) return;
+    try {
+      const res = await axios.post(`${API_BASE}/return_to_warehouse`, {
+        med_id: uqid,
+        camp_id: selectedCamp
+      });
+      
+      setSuccessMsg(`Stock returned to warehouse`);
+      setTimeout(() => setSuccessMsg(''), 3000);
+      fetchMedicines();
+      fetchCampStocks();
+    } catch (err) {
+      alert('Error returning stock: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleCloseSession = async () => {
+    if (!selectedCamp) return;
+    if (!window.confirm("Are you sure you want to close this camp session? All leftover stock will be returned to the warehouse.")) return;
+
+    try {
+      const res = await axios.post(`${API_BASE}/close_camp_session`, {
+        camp_id: selectedCamp
+      });
+      
+      setSuccessMsg(`Camp session closed successfully`);
+      setTimeout(() => setSuccessMsg(''), 3000);
+      fetchMedicines();
+      fetchCampStocks();
+    } catch (err) {
+      alert('Error closing session: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -179,9 +210,9 @@ const MedicineEntry = () => {
         </button>
         
         {viewMode === 'camp' && (
-          <div className="flex-1 max-w-xs animate-in fade-in slide-in-from-left-4">
+          <div className="flex flex-1 items-center gap-4 animate-in fade-in slide-in-from-left-4">
             <select
-              className="w-full h-full bg-white border border-slate-200 rounded-2xl px-5 py-4 text-xs font-black text-slate-600 focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 outline-none transition-all appearance-none cursor-pointer"
+              className="flex-1 bg-white border border-slate-200 rounded-2xl px-5 py-4 text-xs font-black text-slate-600 focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 outline-none transition-all appearance-none cursor-pointer"
               value={selectedCamp}
               onChange={e => setSelectedCamp(e.target.value)}
             >
@@ -192,6 +223,16 @@ const MedicineEntry = () => {
                 </option>
               ))}
             </select>
+            
+            {selectedCamp && (
+              <button 
+                onClick={handleCloseSession}
+                className="flex items-center gap-2 px-6 py-4 bg-rose-50 text-rose-600 border border-rose-100 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all group shadow-sm active:scale-95"
+              >
+                <Ban size={16} className="group-hover:rotate-12 transition-transform" />
+                Close Session
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -308,9 +349,11 @@ const MedicineEntry = () => {
                 <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                   <th className="px-8 py-5">UQID</th>
                   <th className="px-8 py-5">Medication Name</th>
-                  <th className="px-8 py-5">Warehouse (Total)</th>
-                  <th className="px-8 py-5">Camp Allocation</th>
-                  <th className="px-8 py-5 text-right">Move to Camp</th>
+                  <th className="px-8 py-5">Warehouse</th>
+                  <th className="px-8 py-5">Allocated</th>
+                  <th className="px-8 py-5">Used</th>
+                  <th className="px-8 py-5">Available</th>
+                  <th className="px-8 py-5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -337,29 +380,52 @@ const MedicineEntry = () => {
                       </td>
                       <td className="px-8 py-6">
                          <div className="flex items-center gap-3">
-                            <span className="w-12 h-12 flex items-center justify-center bg-emerald-50 text-emerald-600 rounded-full font-black font-data border border-emerald-100">
+                            <span className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 rounded-xl font-black font-data border border-blue-100 text-xs">
                                {stock.camp_stock}
                             </span>
-                            {allocateQtys[stock.uqid] > 0 && (
-                              <span className="text-emerald-500 font-black text-xs animate-pulse">+{allocateQtys[stock.uqid]}</span>
-                            )}
+                         </div>
+                      </td>
+                      <td className="px-8 py-6">
+                         <div className="flex items-center gap-3">
+                            <span className="w-10 h-10 flex items-center justify-center bg-rose-50 text-rose-600 rounded-xl font-black font-data border border-rose-100 text-xs">
+                               {stock.used_stock}
+                            </span>
+                         </div>
+                      </td>
+                      <td className="px-8 py-6">
+                         <div className="flex items-center gap-3">
+                            <span className="w-10 h-10 flex items-center justify-center bg-emerald-50 text-emerald-600 rounded-xl font-black font-data border border-emerald-100 text-xs">
+                               {stock.remaining_stock}
+                            </span>
                          </div>
                       </td>
                       <td className="px-8 py-6 text-right">
-                         <div className="flex items-center justify-end gap-3">
-                           <input
-                             type="number"
-                             placeholder="Qty"
-                             className="w-20 bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-black text-center focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all placeholder:text-slate-200"
-                             value={allocateQtys[stock.uqid] || ''}
-                             onChange={e => handleAllocateQtyChange(stock.uqid, e.target.value)}
-                           />
+                         <div className="flex items-center justify-end gap-2">
+                           <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                             <input
+                               type="number"
+                               placeholder="Qty"
+                               className="w-16 bg-transparent px-2 py-1 text-slate-800 font-black text-center focus:outline-none placeholder:text-slate-200 text-xs"
+                               value={allocateQtys[stock.uqid] || ''}
+                               onChange={e => handleAllocateQtyChange(stock.uqid, e.target.value)}
+                             />
+                             <button
+                               onClick={() => handleAllocate(stock.uqid)}
+                               disabled={!selectedCamp || !allocateQtys[stock.uqid] || allocateQtys[stock.uqid] <= 0 || allocateQtys[stock.uqid] > stock.total_stock}
+                               className="p-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-50 disabled:text-slate-200 text-white rounded-lg transition-all shadow-sm"
+                               title="Allocate to Camp"
+                             >
+                               <PlusCircle size={16} strokeWidth={2.5} />
+                             </button>
+                           </div>
+                           
                            <button
-                             onClick={() => handleAllocate(stock.uqid)}
-                             disabled={!selectedCamp || !allocateQtys[stock.uqid] || allocateQtys[stock.uqid] <= 0 || allocateQtys[stock.uqid] > stock.total_stock}
-                             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-100 disabled:text-slate-300 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-emerald-100 active:scale-95 flex items-center gap-2"
+                             onClick={() => handleReturn(stock.uqid)}
+                             disabled={!selectedCamp || stock.remaining_stock <= 0}
+                             className="p-2.5 bg-white border border-slate-200 text-slate-400 hover:text-teal-600 hover:border-teal-200 hover:bg-teal-50 rounded-xl transition-all shadow-sm disabled:opacity-30 disabled:hover:bg-white disabled:hover:border-slate-200"
+                             title="Return Leftover to Warehouse"
                            >
-                             Allocate
+                             <RefreshCcw size={18} strokeWidth={2.5} />
                            </button>
                          </div>
                       </td>
