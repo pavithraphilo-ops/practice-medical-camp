@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
 import Vitals from './pages/Vitals';
 import PatientProfile from './pages/PatientProfile';
 import Inventory from './pages/Inventory';
@@ -19,7 +20,7 @@ function App() {
 
         {/* Protected routes wrapped in Layout */}
         <Route element={<Layout />}>
-          <Route path="/dashboard" element={<Navigate to="/vitals" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/vitals" element={<Vitals />} />
           <Route path="/patient" element={<PatientProfile />} />
           <Route path="/inventory" element={<Inventory />} />
