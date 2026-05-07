@@ -10,6 +10,7 @@ const API_BASE = 'http://127.0.0.1:8000/api';
 const CampRegistration = () => {
   const [campId, setCampId] = useState('');
   const [campDate, setCampDate] = useState('');
+  const [venue, setVenue] = useState(''); // Added Venue state
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -65,14 +66,16 @@ const CampRegistration = () => {
       const apiDate = `${y}-${m}-${d}`;
 
       await axios.post(`${API_BASE}/register_camp`, {
-        camp_id: campId,
+        camp_number: campId,
         date: apiDate,
+        venue_name: venue
       });
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 4000);
       setCampId('');
       setCampDate('');
+      setVenue('');
     } catch (err) {
       setError(err.response?.data?.message || 'Error registering camp. Please try again.');
       setTimeout(() => setError(''), 4000);
@@ -120,8 +123,25 @@ const CampRegistration = () => {
       <div className="glass-panel-light p-10 relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 via-teal-400 to-emerald-400" />
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Camp ID */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Camp Venue / Location */}
+          <div className="space-y-3">
+            <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+              <Landmark size={12} className="text-teal-500" strokeWidth={2.5} />
+              Camp Venue / Location
+              <span className="text-rose-400">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Community Center, City Hall"
+              value={venue}
+              onChange={e => setVenue(e.target.value)}
+              className="w-full bg-white border border-slate-200 rounded-xl px-5 py-4 text-xl font-black text-slate-800 placeholder:text-slate-300 focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 outline-none transition-all shadow-sm hover:border-slate-300"
+            />
+          </div>
+
+          {/* Camp ID / Number */}
           <div className="space-y-3">
             <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
               <Hash size={12} className="text-teal-500" strokeWidth={2.5} />
@@ -166,7 +186,7 @@ const CampRegistration = () => {
                 type="date"
                 ref={dateInputRef}
                 onChange={handleNativeDateChange}
-                className="absolute opacity-0 w-0 h-0 pointer-events-none"
+                className="absolute inset-0 opacity-0 pointer-events-none w-full h-full"
                 tabIndex={-1}
               />
             </div>

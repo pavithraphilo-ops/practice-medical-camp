@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from .forms import IssueForm, VitalsForm
-from .models import Medicine, MedicalCamp, Issue, MedicineCategory, Vitals, PatientVitals, MedicalTest, TestIssue, Patient, CampWiseStock
+from .models import Medicine, MedicalCamp, MedicalCampVenue, Issue, MedicineCategory, Vitals, PatientVitals, MedicalTest, TestIssue, Patient, CampWiseStock
 from django.core import serializers
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -555,5 +555,32 @@ def api_close_camp_session(request):
             cs.save()
 
         return JsonResponse({'status': 'success', 'message': 'Camp session closed and stock returned to warehouse'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_register_camp(request):
+    try:
+        data = json.loads(request.body)
+        camp_number = data.get('camp_number')
+        venue_name = data.get('venue_name')
+        camp_date = data.get('date') # yyyy-mm-dd
+
+        # 1. Get or Create Venue
+        venue, _ = MedicalCampVenue.objects.get_or_create(name=venue_name)
+
+        # 2. Create the Camp (Signals will auto-create CampWiseStock)
+        camp = MedicalCamp.objects.create(
+            number=camp_number,
+            venue=venue,
+            date=camp_date
+        )
+
+        return JsonResponse({
+            'status': 'success', 
+            'message': f'Camp {camp_number} at {venue_name} registered successfully',
+            'camp_id': camp.id
+        })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
