@@ -1186,7 +1186,14 @@ def api_camp_patients(request, camp_id):
         ).values_list('patient_id', flat=True)
     )
 
-    all_pids = vitals_pids | issue_pids | test_pids
+    registered_pids = set(
+        # pyrefly: ignore [missing-attribute]
+        Patient.objects.filter(
+            camp_session=camp.id
+        ).values_list('patient_id', flat=True)
+    )
+
+    all_pids = vitals_pids | issue_pids | test_pids | registered_pids
 
     patient_names = {}
 
@@ -1230,8 +1237,10 @@ def api_camp_patients(request, camp_id):
         for ti in test_issues:
 
             tests.append({
+                'test_issue_id': ti.id,
                 'test_id': ti.test.id,
                 'test_name': ti.test.name,
+                'records_issued': ti.records_issued,
             })
 
         result.append({
@@ -1242,3 +1251,25 @@ def api_camp_patients(request, camp_id):
         })
 
     return JsonResponse(result, safe=False)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_update_test_record(request):
+    try:
+        data = json.loads(request.body)
+        test_issue_id = data.get('test_issue_id')
+        records_issued = data.get('records_issued')
+
+        test_issue = get_object_or_404(TestIssue, id=test_issue_id)
+        test_issue.records_issued = bool(records_issued)
+        test_issue.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'records_issued': test_issue.records_issued
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=400)

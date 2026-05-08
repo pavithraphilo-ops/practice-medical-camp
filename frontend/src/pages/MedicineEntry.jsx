@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Pill, Search, PackageOpen, Filter, Box, PlusCircle, CheckCircle2, Heart, Landmark, RefreshCcw, Ban } from 'lucide-react';
+import { Pill, Search, PackageOpen, Filter, Box, PlusCircle, CheckCircle2, Heart, Landmark, RefreshCcw } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
@@ -154,24 +154,6 @@ const MedicineEntry = () => {
     }
   };
 
-  const handleCloseSession = async () => {
-    if (!selectedCamp) return;
-    if (!window.confirm("Are you sure you want to close this camp session? All leftover stock will be returned to the warehouse.")) return;
-
-    try {
-      const res = await axios.post(`${API_BASE}/close_camp_session`, {
-        camp_id: selectedCamp
-      });
-      
-      setSuccessMsg(`Camp session closed successfully`);
-      setTimeout(() => setSuccessMsg(''), 3000);
-      fetchMedicines();
-      fetchCampStocks();
-    } catch (err) {
-      alert('Error closing session: ' + (err.response?.data?.message || err.message));
-    }
-  };
-
   const filteredMeds = medicines.filter(m => 
     m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     m.uqid.toString().includes(searchTerm)
@@ -248,15 +230,6 @@ const MedicineEntry = () => {
               ))}
             </select>
             
-            {selectedCamp && (
-              <button 
-                onClick={handleCloseSession}
-                className="flex items-center gap-2 px-6 py-4 bg-rose-50 text-rose-600 border border-rose-100 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all group shadow-sm active:scale-95"
-              >
-                <Ban size={16} className="group-hover:rotate-12 transition-transform" />
-                Close Session
-              </button>
-            )}
           </div>
         )}
       </div>

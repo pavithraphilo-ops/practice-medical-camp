@@ -13,6 +13,7 @@ const CampPatients = () => {
   const [campPatients, setCampPatients] = useState([]);
   const [listLoading, setListLoading] = useState(false);
   const [expandedPatient, setExpandedPatient] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     axios.get(`${API_BASE}/camps`).then(res => setCamps(res.data));
@@ -33,6 +34,30 @@ const CampPatients = () => {
       setListLoading(false);
     }
   };
+
+  const handleUpdateTestRecord = async (testIssueId, newValue, patientId, tIndex) => {
+    try {
+      await axios.post(`${API_BASE}/update_test_record`, {
+        test_issue_id: testIssueId,
+        records_issued: newValue
+      });
+      const newPatients = [...campPatients];
+      const pIndex = newPatients.findIndex(p => p.patient_id === patientId);
+      if (pIndex !== -1) {
+        newPatients[pIndex].tests[tIndex].records_issued = newValue;
+        setCampPatients(newPatients);
+      }
+    } catch (err) {
+      alert('Error updating record: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const filteredPatients = campPatients.filter(pat => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return pat.patient_id.toString().includes(query) || 
+           (pat.patient_name && pat.patient_name.toLowerCase().includes(query));
+  });
 
   return (
     <div className="max-w-7xl mx-auto py-6">
@@ -60,6 +85,7 @@ const CampPatients = () => {
             onChange={e => {
               setListCamp(e.target.value);
               setExpandedPatient(null);
+              setSearchQuery('');
               fetchCampPatients(e.target.value);
             }}
           >
@@ -70,6 +96,20 @@ const CampPatients = () => {
               </option>
             ))}
           </select>
+
+          {/* Search Bar */}
+          {listCamp && campPatients.length > 0 && (
+            <div className="mt-4 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} strokeWidth={2.5} />
+              <input
+                type="text"
+                placeholder="Search by Patient ID or Name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-5 py-3 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 outline-none transition-all"
+              />
+            </div>
+          )}
         </div>
 
         {/* Loading */}
@@ -87,19 +127,27 @@ const CampPatients = () => {
           </div>
         )}
 
+        {/* No search results */}
+        {!listLoading && listCamp && campPatients.length > 0 && filteredPatients.length === 0 && (
+          <div className="text-center py-16">
+            <Search size={40} className="text-slate-200 mx-auto mb-3" />
+            <p className="text-sm font-bold text-slate-400">No patients match your search query</p>
+          </div>
+        )}
+
         {/* Patient count badge */}
-        {!listLoading && campPatients.length > 0 && (
+        {!listLoading && filteredPatients.length > 0 && (
           <div className="flex items-center gap-2 mb-4">
             <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-full border border-blue-100">
-              {campPatients.length} {campPatients.length === 1 ? 'Patient' : 'Patients'}
+              {filteredPatients.length} {filteredPatients.length === 1 ? 'Patient' : 'Patients'}
             </span>
           </div>
         )}
 
         {/* Patient Cards */}
-        {!listLoading && campPatients.length > 0 && (
+        {!listLoading && filteredPatients.length > 0 && (
           <div className="space-y-3">
-            {campPatients.map((pat, idx) => {
+            {filteredPatients.map((pat, idx) => {
               const isExpanded = expandedPatient === idx;
               return (
                 <div
@@ -200,18 +248,36 @@ const CampPatients = () => {
                           {pat.tests.length === 0 ? (
                             <p className="text-xs text-slate-300 font-bold italic pl-1">No tests issued</p>
                           ) : (
-                            <div className="flex flex-wrap gap-2">
-                              {pat.tests.map((t, ti) => (
-                                <div
-                                  key={ti}
-                                  className="flex items-center gap-2 px-3 py-2 bg-purple-50 border border-purple-200 rounded-xl"
-                                >
-                                  <span className="w-5 h-5 rounded-md bg-purple-600 text-white text-[9px] font-black flex items-center justify-center">
-                                    {t.test_id}
-                                  </span>
-                                  <span className="text-xs font-bold text-purple-700">{t.test_name}</span>
-                                </div>
-                              ))}
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
+                              <table className="w-full text-left border-collapse">
+                                <thead>
+                                  <tr className="bg-gradient-to-r from-slate-50 to-purple-50/30 border-b border-slate-200">
+                                    <th className="px-3 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] w-16 text-center">T.ID</th>
+                                    <th className="px-3 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-[0.15em]">Test Name</th>
+                                    <th className="px-3 py-2.5 text-[9px] font-black text-purple-600 uppercase tracking-[0.15em] w-28 text-center">Records Issued</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                  {pat.tests.map((t, ti) => (
+                                    <tr key={ti} className="hover:bg-purple-50/30 transition-colors">
+                                      <td className="px-3 py-2 text-center">
+                                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-purple-50 text-purple-700 text-[10px] font-black border border-purple-100">
+                                          {t.test_id}
+                                        </span>
+                                      </td>
+                                      <td className="px-3 py-2 text-xs font-bold text-slate-700">{t.test_name}</td>
+                                      <td className="px-3 py-2 text-center">
+                                        <input 
+                                          type="checkbox" 
+                                          className="w-4 h-4 accent-purple-600 cursor-pointer"
+                                          checked={t.records_issued || false}
+                                          onChange={(e) => handleUpdateTestRecord(t.test_issue_id, e.target.checked, pat.patient_id, ti)}
+                                        />
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
                             </div>
                           )}
                         </div>
