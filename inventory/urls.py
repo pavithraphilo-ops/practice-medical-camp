@@ -29,4 +29,5 @@ urlpatterns = [
     path('api/return_to_warehouse', api_return_to_warehouse),
     path('api/close_camp_session', api_close_camp_session),
     path('api/register_camp', api_register_camp),
+    path('api/camp_patients/<int:camp_id>', api_camp_patients),
 ]

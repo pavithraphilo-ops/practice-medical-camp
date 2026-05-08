@@ -1,0 +1,240 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import {
+  ClipboardList, Landmark, Users, ChevronUp, ChevronDown, 
+  Pill, FlaskConical, Search
+} from 'lucide-react';
+
+const API_BASE = 'http://127.0.0.1:8000/api';
+
+const CampPatients = () => {
+  const [camps, setCamps] = useState([]);
+  const [listCamp, setListCamp] = useState('');
+  const [campPatients, setCampPatients] = useState([]);
+  const [listLoading, setListLoading] = useState(false);
+  const [expandedPatient, setExpandedPatient] = useState(null);
+
+  useEffect(() => {
+    axios.get(`${API_BASE}/camps`).then(res => setCamps(res.data));
+  }, []);
+
+  const fetchCampPatients = async (campId) => {
+    if (!campId) {
+      setCampPatients([]);
+      return;
+    }
+    setListLoading(true);
+    try {
+      const res = await axios.get(`${API_BASE}/camp_patients/${campId}`);
+      setCampPatients(res.data);
+    } catch {
+      setCampPatients([]);
+    } finally {
+      setListLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto py-6">
+      {/* ═══════════ CAMP WISE PATIENT LIST ═══════════ */}
+      <div className="glass-panel-light p-8 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-400 to-purple-400" />
+
+        {/* Section title */}
+        <div className="flex items-center gap-2 mb-6">
+          <div className="p-1.5 bg-blue-50 rounded-lg border border-blue-100">
+            <ClipboardList size={16} className="text-blue-600" strokeWidth={2.5} />
+          </div>
+          <h4 className="text-sm font-black text-slate-700 uppercase tracking-wider">Camp Wise Patient List</h4>
+        </div>
+
+        {/* Camp Selector */}
+        <div className="mb-6 p-5 bg-slate-50/50 border border-slate-100 rounded-2xl">
+          <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">
+            <Landmark size={14} className="text-blue-500" />
+            Select Target Camp...
+          </label>
+          <select
+            className="w-full bg-white border border-slate-200 rounded-xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer"
+            value={listCamp}
+            onChange={e => {
+              setListCamp(e.target.value);
+              setExpandedPatient(null);
+              fetchCampPatients(e.target.value);
+            }}
+          >
+            <option value="">Select Target Camp...</option>
+            {camps.map(camp => (
+              <option key={camp.id} value={camp.id}>
+                {camp.venue} • Camp {camp.number} ({camp.date})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Loading */}
+        {listLoading && (
+          <div className="flex items-center justify-center py-16">
+            <div className="h-8 w-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+          </div>
+        )}
+
+        {/* No patients */}
+        {!listLoading && listCamp && campPatients.length === 0 && (
+          <div className="text-center py-16">
+            <Users size={40} className="text-slate-200 mx-auto mb-3" />
+            <p className="text-sm font-bold text-slate-400">No patients found for this camp</p>
+          </div>
+        )}
+
+        {/* Patient count badge */}
+        {!listLoading && campPatients.length > 0 && (
+          <div className="flex items-center gap-2 mb-4">
+            <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-full border border-blue-100">
+              {campPatients.length} {campPatients.length === 1 ? 'Patient' : 'Patients'}
+            </span>
+          </div>
+        )}
+
+        {/* Patient Cards */}
+        {!listLoading && campPatients.length > 0 && (
+          <div className="space-y-3">
+            {campPatients.map((pat, idx) => {
+              const isExpanded = expandedPatient === idx;
+              return (
+                <div
+                  key={idx}
+                  className={`border rounded-2xl transition-all overflow-hidden ${
+                    isExpanded
+                      ? 'border-blue-300 shadow-md shadow-blue-50 bg-white'
+                      : 'border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm'
+                  }`}
+                >
+                  {/* Patient Header (clickable) */}
+                  <button
+                    type="button"
+                    className="w-full flex items-center justify-between px-5 py-4 text-left"
+                    onClick={() => setExpandedPatient(isExpanded ? null : idx)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black ${
+                        isExpanded
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-blue-50 text-blue-600 border border-blue-100'
+                      }`} >
+                        {pat.patient_id}
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-slate-800">
+                          {pat.patient_name || <span className="text-slate-400 italic">No Name</span>}
+                        </p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                          Patient ID: {pat.patient_id}
+                          {pat.medicines.length > 0 && <span className="ml-2">• {pat.medicines.length} medicine{pat.medicines.length !== 1 && 's'}</span>}
+                          {pat.tests.length > 0 && <span className="ml-2">• {pat.tests.length} test{pat.tests.length !== 1 && 's'}</span>}
+                        </p>
+                      </div>
+                    </div>
+                    <div className={`p-1.5 rounded-lg transition-all ${
+                      isExpanded ? 'bg-blue-100 text-blue-600' : 'text-slate-300'
+                    }`}>
+                      {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    </div>
+                  </button>
+
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <div className="px-5 pb-5 pt-1 border-t border-slate-100">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
+
+                        {/* Medicines */}
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="p-1 bg-emerald-50 rounded-md border border-emerald-100">
+                              <Pill size={12} className="text-emerald-600" />
+                            </div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Medicines Issued</span>
+                          </div>
+                          {pat.medicines.length === 0 ? (
+                            <p className="text-xs text-slate-300 font-bold italic pl-1">No medicines issued</p>
+                          ) : (
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
+                              <table className="w-full text-left border-collapse">
+                                <thead>
+                                  <tr className="bg-gradient-to-r from-slate-50 to-emerald-50/30 border-b border-slate-200">
+                                    <th className="px-3 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] w-16 text-center">M.ID</th>
+                                    <th className="px-3 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-[0.15em]">Medicine Name</th>
+                                    <th className="px-3 py-2.5 text-[9px] font-black text-emerald-600 uppercase tracking-[0.15em] w-16 text-center">Qty</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                  {pat.medicines.map((med, mi) => (
+                                    <tr key={mi} className="hover:bg-emerald-50/30 transition-colors">
+                                      <td className="px-3 py-2 text-center">
+                                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-black border border-emerald-100">
+                                          {med.medicine_id}
+                                        </span>
+                                      </td>
+                                      <td className="px-3 py-2 text-xs font-bold text-slate-700">{med.medicine_name}</td>
+                                      <td className="px-3 py-2 text-center">
+                                        <span className="inline-flex items-center justify-center px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 text-[11px] font-black border border-emerald-100">
+                                          {med.quantity}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Tests */}
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="p-1 bg-purple-50 rounded-md border border-purple-100">
+                              <FlaskConical size={12} className="text-purple-600" />
+                            </div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lab Tests Issued</span>
+                          </div>
+                          {pat.tests.length === 0 ? (
+                            <p className="text-xs text-slate-300 font-bold italic pl-1">No tests issued</p>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                              {pat.tests.map((t, ti) => (
+                                <div
+                                  key={ti}
+                                  className="flex items-center gap-2 px-3 py-2 bg-purple-50 border border-purple-200 rounded-xl"
+                                >
+                                  <span className="w-5 h-5 rounded-md bg-purple-600 text-white text-[9px] font-black flex items-center justify-center">
+                                    {t.test_id}
+                                  </span>
+                                  <span className="text-xs font-bold text-purple-700">{t.test_name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Placeholder when no camp is selected */}
+        {!listCamp && (
+          <div className="text-center py-16">
+            <Search size={40} className="text-slate-200 mx-auto mb-3" />
+            <p className="text-sm font-bold text-slate-400">Select a camp to view patient records</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default CampPatients;
