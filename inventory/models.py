@@ -9,7 +9,7 @@ class MedicineCategory(models.Model):
     short_code = models.CharField(max_length=20)
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
 class Medicine(models.Model):
     uqid = models.IntegerField(unique=True)
@@ -26,7 +26,7 @@ class MedicalCampVenue(models.Model):
     name = models.CharField(max_length=2000)
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
 class MedicalCamp(models.Model):
     number = models.IntegerField(unique=True)
@@ -106,10 +106,10 @@ class TestIssue(models.Model):
     patient_id = models.IntegerField()
     camp = models.ForeignKey(MedicalCamp, on_delete=models.CASCADE)
     test = models.ForeignKey(MedicalTest, on_delete=models.CASCADE)
-    records_issued = models.BooleanField(default=False)
+    reports_issued = models.BooleanField(default=False)
     
     def __str__(self):
-        return f"Patient {self.patient_id}, Camp: {self.camp} issued {self.test} (Records Issued: {self.records_issued})"
+        return f"Patient {self.patient_id}, Camp: {self.camp} issued {self.test} (Reports Issued: {self.reports_issued})"
 
 class Patient(models.Model):
     class Meta:

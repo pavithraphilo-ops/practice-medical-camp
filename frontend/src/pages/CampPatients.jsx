@@ -39,12 +39,12 @@ const CampPatients = () => {
     try {
       await axios.post(`${API_BASE}/update_test_record`, {
         test_issue_id: testIssueId,
-        records_issued: newValue
+        reports_issued: newValue
       });
       const newPatients = [...campPatients];
       const pIndex = newPatients.findIndex(p => p.patient_id === patientId);
       if (pIndex !== -1) {
-        newPatients[pIndex].tests[tIndex].records_issued = newValue;
+        newPatients[pIndex].tests[tIndex].reports_issued = newValue;
         setCampPatients(newPatients);
       }
     } catch (err) {
@@ -254,7 +254,7 @@ const CampPatients = () => {
                                   <tr className="bg-gradient-to-r from-slate-50 to-purple-50/30 border-b border-slate-200">
                                     <th className="px-3 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] w-16 text-center">T.ID</th>
                                     <th className="px-3 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-[0.15em]">Test Name</th>
-                                    <th className="px-3 py-2.5 text-[9px] font-black text-purple-600 uppercase tracking-[0.15em] w-28 text-center">Records Issued</th>
+                                    <th className="px-3 py-2.5 text-[9px] font-black text-purple-600 uppercase tracking-[0.15em] w-28 text-center">Reports Issued</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -270,7 +270,7 @@ const CampPatients = () => {
                                         <input 
                                           type="checkbox" 
                                           className="w-4 h-4 accent-purple-600 cursor-pointer"
-                                          checked={t.records_issued || false}
+                                          checked={t.reports_issued || false}
                                           onChange={(e) => handleUpdateTestRecord(t.test_issue_id, e.target.checked, pat.patient_id, ti)}
                                         />
                                       </td>

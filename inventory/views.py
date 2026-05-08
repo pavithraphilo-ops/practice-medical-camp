@@ -1240,7 +1240,7 @@ def api_camp_patients(request, camp_id):
                 'test_issue_id': ti.id,
                 'test_id': ti.test.id,
                 'test_name': ti.test.name,
-                'records_issued': ti.records_issued,
+                'reports_issued': ti.reports_issued,
             })
 
         result.append({
@@ -1258,15 +1258,15 @@ def api_update_test_record(request):
     try:
         data = json.loads(request.body)
         test_issue_id = data.get('test_issue_id')
-        records_issued = data.get('records_issued')
+        reports_issued = data.get('reports_issued')
 
         test_issue = get_object_or_404(TestIssue, id=test_issue_id)
-        test_issue.records_issued = bool(records_issued)
+        test_issue.reports_issued = bool(reports_issued)
         test_issue.save()
 
         return JsonResponse({
             'status': 'success',
-            'records_issued': test_issue.records_issued
+            'reports_issued': test_issue.reports_issued
         })
     except Exception as e:
         return JsonResponse({
