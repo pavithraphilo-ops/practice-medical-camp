@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Pill, Search, Download, PackageOpen, Filter, Box, Heart } from 'lucide-react';
+import { Pill, Search, Download, PackageOpen, Filter, Box, Heart, Check, X } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
@@ -8,6 +8,10 @@ const Inventory = () => {
   const [medicines, setMedicines] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [editingUqid, setEditingUqid] = useState(null);
+  const [editValue, setEditValue] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     axios.get(`${API_BASE}/medicines`).then(res => {
@@ -28,8 +32,71 @@ const Inventory = () => {
     window.location.href = 'http://localhost:8000/export';
   };
 
+  const startEdit = (med) => {
+    setEditingUqid(med.uqid);
+    setEditValue(String(med.stock));
+  };
+
+  const cancelEdit = () => {
+    setEditingUqid(null);
+    setEditValue('');
+  };
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const saveStock = async (uqid) => {
+    const newStock = parseInt(editValue, 10);
+    if (isNaN(newStock) || newStock < 0) {
+      showToast('Please enter a valid number (0 or above)', 'error');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await axios.post(`${API_BASE}/set_stock`, {
+        uqid: uqid,
+        stock: newStock
+      });
+
+      if (res.data.status === 'success') {
+        // Update the local state
+        setMedicines(prev =>
+          prev.map(m => m.uqid === uqid ? { ...m, stock: newStock } : m)
+        );
+        showToast(`${res.data.medicine_name} stock updated to ${newStock}`);
+        setEditingUqid(null);
+        setEditValue('');
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to update stock';
+      showToast(msg, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleKeyDown = (e, uqid) => {
+    if (e.key === 'Enter') saveStock(uqid);
+    if (e.key === 'Escape') cancelEdit();
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-10">
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl shadow-lg border font-bold text-sm flex items-center gap-3 animate-fade-in ${
+          toast.type === 'success'
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+            : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
+          {toast.type === 'success' ? <Check size={18} strokeWidth={3} /> : <X size={18} strokeWidth={3} />}
+          {toast.message}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
         <div>
@@ -43,7 +110,7 @@ const Inventory = () => {
             </div>
             <h3 className="text-3xl font-black text-slate-800 tracking-tight">Stock Inventory</h3>
           </div>
-          <p className="text-slate-400 text-sm font-bold ml-[52px]">Central Pharmacy Repository</p>
+          <p className="text-slate-400 text-sm font-bold ml-[52px]">Central Pharmacy Repository &mdash; Click stock value to edit</p>
         </div>
         <button
           onClick={handleExport}
@@ -99,7 +166,7 @@ const Inventory = () => {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan="4" className="px-8 py-24 text-center">
+                  <td colSpan="5" className="px-8 py-24 text-center">
                     <div className="flex flex-col items-center gap-4 text-slate-400">
                       <div className="h-8 w-8 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin" />
                       <span className="font-extrabold uppercase tracking-widest text-xs">Syncing Repository...</span>
@@ -126,23 +193,59 @@ const Inventory = () => {
                       </span>
                     </td>
                     <td className="px-8 py-6 text-right">
-                       <div className="flex flex-col items-end">
-                        <span className={`text-xl font-black font-data ${med.stock > 10 ? 'text-slate-800' : 'text-red-500'}`}>
-                          {med.stock}
-                        </span>
-                        <div className={`h-1.5 w-14 rounded-full mt-2 ${med.stock > 10 ? 'bg-emerald-100' : 'bg-red-100'}`}>
-                           <div 
-                            className={`h-full rounded-full transition-all ${med.stock > 10 ? 'bg-emerald-500' : 'bg-red-500'}`} 
-                            style={{ width: `${Math.min(med.stock, 100)}%` }}
+                      {editingUqid === med.uqid ? (
+                        /* Editing mode */
+                        <div className="flex items-center justify-end gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            autoFocus
+                            value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onKeyDown={e => handleKeyDown(e, med.uqid)}
+                            onBlur={() => saveStock(med.uqid)}
+                            className="w-24 text-right text-lg font-black font-data bg-white border-2 border-teal-400 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-teal-500/30"
+                            disabled={saving}
                           />
+                          <button
+                            onMouseDown={(e) => e.preventDefault()} // Prevent blur from firing before click
+                            onClick={() => saveStock(med.uqid)}
+                            disabled={saving}
+                            className="p-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-all disabled:opacity-50"
+                            title="Save"
+                          >
+                            <Check size={16} strokeWidth={3} />
+                          </button>
+                          <button
+                            onMouseDown={(e) => e.preventDefault()} // Prevent blur from firing before click
+                            onClick={cancelEdit}
+                            disabled={saving}
+                            className="p-2 bg-slate-200 hover:bg-slate-300 text-slate-600 rounded-lg transition-all disabled:opacity-50"
+                            title="Cancel"
+                          >
+                            <X size={16} strokeWidth={3} />
+                          </button>
                         </div>
-                       </div>
+                      ) : (
+                        /* Display mode */
+                        <div className="flex flex-col items-end cursor-pointer" onClick={() => startEdit(med)}>
+                          <span className={`text-xl font-black font-data ${med.stock > 10 ? 'text-slate-800' : 'text-red-500'}`}>
+                            {med.stock}
+                          </span>
+                          <div className={`h-1.5 w-14 rounded-full mt-2 ${med.stock > 10 ? 'bg-emerald-100' : 'bg-red-100'}`}>
+                             <div 
+                              className={`h-full rounded-full transition-all ${med.stock > 10 ? 'bg-emerald-500' : 'bg-red-500'}`} 
+                              style={{ width: `${Math.min(med.stock, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="px-8 py-32 text-center">
+                  <td colSpan="5" className="px-8 py-32 text-center">
                     <div className="flex flex-col items-center gap-4 animate-fade-in">
                       <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 mb-2">
                         <PackageOpen size={60} strokeWidth={1} className="text-slate-300" />
@@ -162,4 +265,3 @@ const Inventory = () => {
 };
 
 export default Inventory;
-

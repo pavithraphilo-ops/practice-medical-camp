@@ -26,7 +26,25 @@ function PatientRegistration() {
     const [pidChecking, setPidChecking] = useState(false);
 
     useEffect(() => {
-        axios.get(`${API_BASE}/camps`).then(res => setCamps(res.data));
+        axios.get(`${API_BASE}/camps`).then(res => {
+            const campList = res.data;
+            setCamps(campList);
+            
+            // Auto-fill with the latest camp if available
+            if (campList.length > 0) {
+                const latestCamp = campList[campList.length - 1]; // Assuming the last one is the latest
+                
+                // Convert yyyy-mm-dd to dd/mm/yyyy
+                const [y, m, d] = latestCamp.date.split('-');
+                const formattedDate = `${d}/${m}/${y}`;
+                
+                setForm(prev => ({
+                    ...prev,
+                    regdate: formattedDate,
+                    camp_session: latestCamp.number
+                }));
+            }
+        });
     }, []);
 
     const handleChange = (field, value) => {
@@ -102,11 +120,16 @@ function PatientRegistration() {
 
             await axios.post(`${API_BASE}/register_patient`, { ...form, regdate: apiDate });
             setSuccess(true);
-            setForm({
-                pid: "", name: "", age: "", gender: "",
-                regdate: "",
-                camp_session: "", contact: "", address: "",
-            });
+            setForm(prev => ({
+                ...prev,
+                pid: "",
+                name: "",
+                age: "",
+                gender: "",
+                contact: "",
+                address: "",
+                // Preserve regdate and camp_session
+            }));
             setTimeout(() => setSuccess(false), 3000);
         } catch (err) {
             alert("Error registering patient: " + (err.response?.data?.message || err.message));
