@@ -85,7 +85,7 @@ const Layout = () => {
           </p>
           <nav className="flex flex-col gap-1">
             <SidebarLink to="/camp-registration" icon={Stethoscope} label="Camp Registration" active={location.pathname === '/camp-registration'} />
-            <SidebarLink to="/camp-patients" icon={Users} label="Camp Patients" active={location.pathname === '/camp-patients'} />
+            <SidebarLink to="/camp-patients" icon={Users} label="Camp Patient List" active={location.pathname === '/camp-patients'} />
             <SidebarLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" active={location.pathname === '/dashboard'} />
             <SidebarLink to="/vitals" icon={Activity} label="Log Vitals" active={location.pathname === '/vitals'} />
             <SidebarLink to="/inventory" icon={Pill} label="Inventory" active={location.pathname === '/inventory'} />
