@@ -1,21 +1,21 @@
 from django.contrib import admin
-from .models import Medicine, MedicineCategory, MedicalCamp, MedicalCampVenue, Issue, Vitals, PatientVitals, TestIssue, MedicalTest, CampWiseStock
-
-
-# Register your models here.
+from .models import (
+    Medicine, MedicineCategory, MedicalCamp, MedicalCampVenue, 
+    PatientMedicineIssue, Vitals, PatientVitals, TestIssue, 
+    MedicalTest, CampWiseStock
+)
 
 class MedicineAdmin(admin.ModelAdmin):
     list_display = ['uqid', 'name', 'formulation', 'category', 'stock', 'expiry_date']
     list_filter = ['category', 'expiry_date']
     search_fields = ['uqid', 'name', 'category']
 
-
 class VitalsAdmin(admin.ModelAdmin):
     list_display = ['patient_id', 'camp', 'blood_pressure', 'glucose', 'haemoglobin']
     list_filter = ['camp']
 
 class IssueInline(admin.TabularInline):
-    model = Issue
+    model = PatientMedicineIssue
     extra = 0
     fields = ['medicine', 'qty', 'strength', 'days', 'morning', 'afternoon', 'night']
 
@@ -24,14 +24,12 @@ class PatientVitalsAdmin(admin.ModelAdmin):
     list_filter = ['camp', 'date', 'dr_name']
     search_fields = ['patient_id', 'diagnosis', 'dr_name']
     inlines = [IssueInline]
-    
-    
 
 admin.site.register(Medicine, MedicineAdmin)
 admin.site.register(MedicineCategory)
 admin.site.register(MedicalCamp)
 admin.site.register(MedicalCampVenue)
-admin.site.register(Issue)
+admin.site.register(PatientMedicineIssue)
 admin.site.register(Vitals, VitalsAdmin)
 admin.site.register(PatientVitals, PatientVitalsAdmin)
 admin.site.register(MedicalTest)

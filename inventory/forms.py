@@ -1,4 +1,4 @@
-from .models import Issue, MedicalCamp
+from .models import PatientMedicineIssue, MedicalCamp
 from django import forms
 
 class IssueForm(forms.Form):

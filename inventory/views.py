@@ -1,13 +1,14 @@
 from django.shortcuts import render, redirect
-from .forms import IssueForm, VitalsForm
-from .models import Medicine, MedicalCamp, MedicalCampVenue, Issue, MedicineCategory, Vitals, PatientVitals, MedicalTest, TestIssue, Patient, CampWiseStock
 from django.core import serializers
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth import authenticate, login
 import json
 import csv
 
+from .forms import IssueForm, VitalsForm
+from .models import Medicine, MedicalCamp, MedicalCampVenue, PatientMedicineIssue, MedicineCategory, Vitals, PatientVitals, MedicalTest, TestIssue, Patient, CampWiseStock
 
 def charts_data(vitals):
     all_vitals = {"blood_pressure" : {}, "glucose" : {}, "haemoglobin": {}}
@@ -22,7 +23,6 @@ def charts_data(vitals):
             all_vitals['glucose'][d_str] = vital.glucose
 
         if vital.haemoglobin.strip() not in ["NA", '-']:
-            print(vital.haemoglobin)
             all_vitals['haemoglobin'][d_str] = vital.haemoglobin
 
     return all_vitals    
@@ -34,24 +34,17 @@ def get_patient_profile(request):
     patient_id=None
     if 'patient_id' in request.GET:
         patient_id = request.GET['patient_id']
-        selected_issues = Issue.objects.filter(patient_id=patient_id).order_by('-camp')
+        selected_issues = PatientMedicineIssue.objects.filter(patient_id=patient_id).order_by('-camp')
         p_vitals = Vitals.objects.filter(patient_id=patient_id).order_by('camp')
         all_vitals = charts_data(p_vitals)
-        #print(all_vitals)
 
         groups = {}
         for issue in selected_issues:
-       
             if issue.camp not in groups:
                 groups[issue.camp] = []
             groups[issue.camp].append(issue)
 
-    #print(groups)
-#    return HttpResponse(serializers.serialize('json', groups))
-#    return JsonResponse(groups)
     return render(request, 'inventory/patient.tpl.html', {'groups' : groups, 'patient_id' : patient_id, 'patient_vitals' : p_vitals, 'vital_charts' : all_vitals})
-
-
 
 def get_patient_vitals(request):
     success = False
@@ -59,7 +52,6 @@ def get_patient_vitals(request):
         vitals_form = VitalsForm()
     elif request.method == 'POST':
         vitals_form = VitalsForm()
-        print(request.POST)
         v = Vitals.objects.filter(patient_id = request.POST['patient_id'], camp__id = int(request.POST['medical_camp']))
         if v:
             v = v[0]
@@ -72,12 +64,10 @@ def get_patient_vitals(request):
         v.glucose = request.POST["glucose"]
         v.haemoglobin = request.POST["haemoglobin"]
         v.save()
-        
         success = True
   
     vitals_form = VitalsForm()
     return render(request, 'inventory/vitals.tpl.html', {'vitals_form' : vitals_form, 'success' : success})
-
 
 def issue_tests(request):
     all_camps = MedicalCamp.objects.all().order_by("-date")
@@ -87,14 +77,11 @@ def issue_tests(request):
         return render(request, 'inventory/tests.tpl.html', {'all_tests' : all_test_types, 'all_camps': all_camps})
         
     elif request.method == 'POST':
-        #print(request.POST)
         test_ids = request.POST.getlist("tests")
         camp_id = int(request.POST['camp'])
         patient_id = int(request.POST['patient_id'])
         
         camp = MedicalCamp.objects.get(id=camp_id)
-        print(request.POST)
-        print(camp_id, camp)
         for test_id in test_ids:
             test = MedicalTest.objects.get(id = test_id)
             test_issue = TestIssue()
@@ -104,32 +91,20 @@ def issue_tests(request):
             test_issue.save()
             
         return render(request, 'inventory/tests.tpl.html', {'all_tests' : all_test_types, 'all_camps': all_camps, 'success': True})
-        
-import json
 
 def get_issued_tests(request, patient_id, camp_id):
     v = TestIssue.objects.filter(patient_id = patient_id, camp__id = camp_id)
     if v:
         tests = [x.test.id for x in v]
-        #json_q = {"patient_id":v.patient_id, "name":med.name, "stock":med.stock}
-        #return JsonResponse(serializers.serialize('json', tests), safe=False)
         return JsonResponse(json.dumps(tests), safe=False)
     return JsonResponse('{}', safe=False)
-
-
 
 def search_vitals(request, patient_id, camp_id):
     v = Vitals.objects.filter(patient_id = patient_id, camp__id = camp_id)
     if v:
         v = v[0]
-        #json_q = {"patient_id":v.patient_id, "name":med.name, "stock":med.stock}
         return JsonResponse(serializers.serialize('json', [ v, ]), safe=False)
     return JsonResponse('{}', safe=False)
-
-
-#def add_vitals_record(request):
-
-
 
 def index(request):
     success = False
@@ -137,18 +112,15 @@ def index(request):
         issue_form = IssueForm()
     elif request.method == 'POST':
         issue_form = IssueForm()
-        print(request.POST)
         patient_id = request.POST['patient_id']
         medical_camp = MedicalCamp.objects.get(id=int(request.POST['medical_camp']))
         med_ids = request.POST.getlist('med-id')
         qtys = request.POST.getlist('qty')
-        print(patient_id, med_ids)
         for m in range(len(med_ids)):
             if len(med_ids[m]) > 0:
-                issue = Issue()
+                issue = PatientMedicineIssue()
                 issue.patient_id = int(patient_id)
                 issue.camp = medical_camp
-                print(m, med_ids[m])
                 issue.medicine = Medicine.objects.get(uqid = int(med_ids[m]))
                 issue.qty = int(qtys[m])
                 issue.save()
@@ -182,9 +154,6 @@ def export(request):
         writer.writerow([med.uqid, med.name, med.formulation, med.stock, med.expiry_date])
     return  response
 
-
-# --- API Endpoints for React Frontend ---
-
 def api_get_camps(request):
     camps = MedicalCamp.objects.all().order_by('id')
     data = []
@@ -212,8 +181,7 @@ def api_get_medicines(request):
     return JsonResponse(data, safe=False)
 
 def api_get_patient_details(request, patient_id):
-    # Medicine Issues grouped by camp
-    issues = Issue.objects.filter(patient_id=patient_id).order_by('-camp__date')
+    issues = PatientMedicineIssue.objects.filter(patient_id=patient_id).order_by('-camp__date')
     history = {}
     for issue in issues:
         camp_key = f"{issue.camp.venue.name} - {issue.camp.number} ({issue.camp.date})"
@@ -224,7 +192,6 @@ def api_get_patient_details(request, patient_id):
             'qty': issue.qty
         })
 
-    # Vitals
     vitals_qs = Vitals.objects.filter(patient_id=patient_id).order_by('camp__date')
     vitals_list = []
     for v in vitals_qs:
@@ -236,7 +203,6 @@ def api_get_patient_details(request, patient_id):
             'haemoglobin': v.haemoglobin
         })
 
-    # Charts Data
     charts = charts_data(vitals_qs)
 
     return JsonResponse({
@@ -253,7 +219,7 @@ def api_issue_medicine(request):
         data = json.loads(request.body)
         patient_id = data.get('patient_id')
         camp_id = data.get('medical_camp')
-        med_issues = data.get('issues', []) # List of {med_id, qty}
+        med_issues = data.get('issues', [])
 
         camp = MedicalCamp.objects.get(id=camp_id)
         
@@ -263,7 +229,6 @@ def api_issue_medicine(request):
             if med_id and qty > 0:
                 medicine = Medicine.objects.get(uqid=med_id)
                 
-                # Check CampWiseStock availability
                 try:
                     camp_stock = CampWiseStock.objects.get(camp=camp, medicine=medicine)
                     if camp_stock.remaining_stock() < qty:
@@ -277,13 +242,12 @@ def api_issue_medicine(request):
                         'message': f'Stock not allocated to this camp for {medicine.name}'
                     }, status=400)
                 
-                Issue.objects.create(
+                PatientMedicineIssue.objects.create(
                     patient_id=patient_id,
                     camp=camp,
                     medicine=medicine,
                     qty=qty
                 )
-                # The CampWiseStock.used_stock is now handled by signals automatically!
         
         return JsonResponse({'status': 'success'})
     except Exception as e:
@@ -296,12 +260,9 @@ def api_save_vitals(request):
         data = json.loads(request.body)
         patient_id = data.get('patient_id')
         camp_id = data.get('medical_camp')
-        
-        # Process Medicines and Create Vitals Records
         med_issues = data.get('medicines', [])
         camp = MedicalCamp.objects.get(id=camp_id)
         
-        # 1. Save Vitals to the PatientVitals table (Only once)
         v = PatientVitals.objects.create(
             patient_id=patient_id,
             camp_id=camp_id,
@@ -321,20 +282,16 @@ def api_save_vitals(request):
             diagnosis=data.get('diagnosis')
         )
 
-        # 2. Process Medicines and Create Issues (Linked to the Vitals record)
         for item in med_issues:
             med_id = item.get('msNo')
-            med_name = item.get('medicine')
             qty = int(item.get('quantity', 0))
             
             if med_id and qty > 0:
                 medicine = Medicine.objects.filter(uqid=med_id).first()
                 if medicine:
-                    # Check CampWiseStock availability
                     try:
                         camp_stock = CampWiseStock.objects.get(camp=camp, medicine=medicine)
                         if camp_stock.remaining_stock() < qty:
-                            # If stock is insufficient, we'll roll back (delete the vitals record we just made)
                             v.delete() 
                             return JsonResponse({
                                 'status': 'error', 
@@ -347,12 +304,11 @@ def api_save_vitals(request):
                             'message': f'Stock not allocated to this camp for {medicine.name}'
                         }, status=400)
 
-                    Issue.objects.create(
+                    PatientMedicineIssue.objects.create(
                         patient_id=patient_id,
                         camp=camp,
                         medicine=medicine,
                         qty=qty,
-                        # Link to the visit
                         vitals_record=v,
                         strength=item.get('strength'),
                         days=int(item.get('days') or 0),
@@ -360,6 +316,17 @@ def api_save_vitals(request):
                         afternoon=int(item.get('afternoon') or 0),
                         night=int(item.get('night') or 0)
                     )
+
+        # Save selected lab tests
+        selected_tests = data.get('selected_tests', [])
+        for test_id in selected_tests:
+            test = MedicalTest.objects.filter(test_id=test_id).first()
+            if test:
+                TestIssue.objects.create(
+                    patient_id=patient_id,
+                    camp=camp,
+                    test=test
+                )
         
         return JsonResponse({'status': 'success'})
     except Exception as e:
@@ -383,8 +350,6 @@ def api_register_patient(request):
         return JsonResponse({'status': 'success', 'patient_id': patient.patient_id})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-
-from django.contrib.auth import authenticate, login
 
 @csrf_exempt
 def api_login(request):
@@ -432,7 +397,6 @@ def api_update_medicine_stock(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_set_medicine_stock(request):
-    """Directly set the stock value for a medicine (allows 0)."""
     try:
         data = json.loads(request.body)
         uqid = data.get('uqid')
@@ -456,11 +420,8 @@ def api_set_medicine_stock(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 def api_get_camp_wise_stock(request):
-
     stocks = CampWiseStock.objects.all()
-
     data = []
-
     for s in stocks:
         data.append({
             'uqid': s.medicine.uqid,
@@ -472,7 +433,6 @@ def api_get_camp_wise_stock(request):
             'used_stock': s.used_stock,
             'remaining_stock': s.remaining_stock()
         })
-
     return JsonResponse(data, safe=False)
 
 def api_get_specific_camp_stock(request, camp_id):
@@ -489,59 +449,31 @@ def api_get_specific_camp_stock(request, camp_id):
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_allocate_to_camp(request):
-
     try:
-
         data = json.loads(request.body)
-
         camp_id = data.get('camp_id')
-
         uqid = data.get('uqid')
-
         qty = int(data.get('qty', 0))
-
         medicine = Medicine.objects.get(uqid=uqid)
-
         if medicine.stock < qty:
-
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Insufficient stock'
-            }, status=400)
-
-        camp_stock = CampWiseStock.objects.get(
-            camp_id=camp_id,
-            medicine=medicine
-        )
-
+            return JsonResponse({'status': 'error', 'message': 'Insufficient stock'}, status=400)
+        camp_stock = CampWiseStock.objects.get(camp_id=camp_id, medicine=medicine)
         medicine.stock -= qty
         medicine.save()
-
         camp_stock.allocated_stock += qty
         camp_stock.save()
-
         return JsonResponse({
             'status': 'success',
             'medicine_name': medicine.name,
             'new_total_stock': medicine.stock,
             'new_camp_stock': camp_stock.allocated_stock
         })
-
     except Exception as e:
-
-        return JsonResponse({
-            'status': 'error',
-            'message': str(e)
-        }, status=400)
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_set_camp_allocation(request):
-    """Set the allocated_stock for a medicine in a specific camp.
-    Allows qty = 0 to clear the allocation. Adjusts central Medicine.stock accordingly.
-    Expected JSON payload:
-        {"camp_id": <int>, "uqid": <int>, "qty": <int>}
-    """
     try:
         data = json.loads(request.body)
         camp_id = data.get('camp_id')
@@ -549,33 +481,21 @@ def api_set_camp_allocation(request):
         qty = int(data.get('qty', 0))
         if qty < 0:
             return JsonResponse({'status': 'error', 'message': 'Quantity cannot be negative.'}, status=400)
-
         camp = MedicalCamp.objects.get(id=camp_id)
         medicine = Medicine.objects.get(uqid=uqid)
-
         camp_stock, _ = CampWiseStock.objects.get_or_create(
             camp=camp,
             medicine=medicine,
             defaults={'allocated_stock': 0, 'used_stock': 0}
         )
-
-        diff = qty - camp_stock.allocated_stock  # positive = allocate more, negative = release
+        diff = qty - camp_stock.allocated_stock
         if diff > 0 and medicine.stock < diff:
             return JsonResponse({'status': 'error', 'message': f'Insufficient central stock. Available: {medicine.stock}'}, status=400)
-
-        # Adjust central stock
         medicine.stock -= diff
         medicine.save()
-
-        # Update camp allocation
         camp_stock.allocated_stock = qty
         camp_stock.save()
-
         return JsonResponse({'status': 'success', 'new_allocation': qty, 'central_stock': medicine.stock})
-    except MedicalCamp.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Camp not found'}, status=404)
-    except Medicine.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Medicine not found'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
@@ -585,22 +505,16 @@ def api_return_to_warehouse(request):
     try:
         data = json.loads(request.body)
         camp_id = data.get('camp_id')
-        med_id = data.get('med_id') # uqid
-
+        med_id = data.get('med_id')
         camp_stock = CampWiseStock.objects.get(camp_id=camp_id, medicine__uqid=med_id)
         remaining = camp_stock.remaining_stock()
-
         if remaining > 0:
-            # 1. Add back to main warehouse
             medicine = camp_stock.medicine
             medicine.stock += remaining
             medicine.save()
-
-        # 2. Reset camp stock
         camp_stock.allocated_stock = 0
         camp_stock.used_stock = 0
         camp_stock.save()
-
         return JsonResponse({'status': 'success', 'new_total': medicine.stock})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -611,20 +525,16 @@ def api_close_camp_session(request):
     try:
         data = json.loads(request.body)
         camp_id = data.get('camp_id')
-        
         camp_stocks = CampWiseStock.objects.filter(camp_id=camp_id)
-        
         for cs in camp_stocks:
             remaining = cs.remaining_stock()
             if remaining > 0:
                 medicine = cs.medicine
                 medicine.stock += remaining
                 medicine.save()
-            
             cs.allocated_stock = 0
             cs.used_stock = 0
             cs.save()
-
         return JsonResponse({'status': 'success', 'message': 'Camp session closed and stock returned to warehouse'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -636,18 +546,13 @@ def api_register_camp(request):
         data = json.loads(request.body)
         camp_number = data.get('camp_number')
         venue_name = data.get('venue_name')
-        camp_date = data.get('date') # yyyy-mm-dd
-
-        # 1. Get or Create Venue
+        camp_date = data.get('date')
         venue, _ = MedicalCampVenue.objects.get_or_create(name=venue_name)
-
-        # 2. Create the Camp (Signals will auto-create CampWiseStock)
         camp = MedicalCamp.objects.create(
             number=camp_number,
             venue=venue,
             date=camp_date
         )
-
         return JsonResponse({
             'status': 'success', 
             'message': f'Camp {camp_number} at {venue_name} registered successfully',
@@ -655,3 +560,15 @@ def api_register_camp(request):
         })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+def api_get_medical_tests(request):
+    tests = MedicalTest.objects.all().order_by('test_id')
+    data = []
+    for t in tests:
+        data.append({
+            'id': t.test_id,
+            'name': t.name,
+            'actual_cost': float(t.actual_cost),
+            'patient_cost': float(t.patient_cost),
+        })
+    return JsonResponse(data, safe=False)

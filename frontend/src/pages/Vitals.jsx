@@ -9,31 +9,6 @@ import {
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
-const LAB_TESTS = [
-  { id: 1, name: 'CBP' },
-  { id: 2, name: 'ESR' },
-  { id: 3, name: 'LFT' },
-  { id: 4, name: 'LIPID PROFILE' },
-  { id: 5, name: 'ECG' },
-  { id: 6, name: 'CHEST X RAY DIGITAL' },
-  { id: 7, name: 'URINE EXAMINATION' },
-  { id: 8, name: 'HBA 1C' },
-  { id: 9, name: 'THYROID PROFILE' },
-  { id: 10, name: 'URIC ACID' },
-  { id: 11, name: 'VIDAL' },
-  { id: 12, name: 'MALARIA' },
-  { id: 13, name: 'CALCIUM' },
-  { id: 14, name: 'CRP' },
-  { id: 15, name: 'RA FACTOR' },
-  { id: 16, name: 'KFT' },
-  { id: 17, name: 'VITAMIN D' },
-  { id: 18, name: 'B 12' },
-  { id: 19, name: 'SCAN' },
-  { id: 20, name: '2D ECHO' },
-  { id: 21, name: 'IRON PROFILE' },
-  { id: 22, name: 'X RAY 2 VIEW' },
-];
-
 // Input field component for consistency - MOVED OUTSIDE to prevent re-mounting bug
 const VitalInput = ({ icon: Icon, label, value, onChange, type = 'text', placeholder = '', iconColor = 'text-teal-500', required = false, colSpan = '' }) => (
   <div className={`space-y-2 ${colSpan}`}>
@@ -72,6 +47,7 @@ const Vitals = () => {
   const [selectedTests, setSelectedTests] = useState([]);
   const [selectedCamp, setSelectedCamp] = useState('');
   const [camps, setCamps] = useState([]);
+  const [labTests, setLabTests] = useState([]);
 
   // Medicine table state
   const [medicines, setMedicines] = useState([
@@ -88,6 +64,7 @@ const Vitals = () => {
   useEffect(() => {
     axios.get(`${API_BASE}/camps`).then(res => setCamps(res.data));
     axios.get(`${API_BASE}/medicines`).then(res => setAllMedicines(res.data));
+    axios.get(`${API_BASE}/tests`).then(res => setLabTests(res.data));
   }, []);
 
   useEffect(() => {
@@ -327,7 +304,7 @@ const Vitals = () => {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {LAB_TESTS.map(test => {
+              {labTests.map(test => {
                 const isChecked = selectedTests.includes(test.id);
                 return (
                   <label
