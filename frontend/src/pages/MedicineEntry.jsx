@@ -71,7 +71,7 @@ const MedicineEntry = () => {
 
   const handleUpdate = async (uqid) => {
     const qty = parseInt(updateQtys[uqid]);
-    if (!qty || qty <= 0) return;
+    if (isNaN(qty) || qty <= 0) return;
 
     try {
       const res = await axios.post(`${API_BASE}/update_stock`, {
@@ -79,7 +79,7 @@ const MedicineEntry = () => {
         added_qty: qty
       });
       
-      setSuccessMsg(`Successfully updated ${res.data.medicine_name}`);
+      setSuccessMsg(`Successfully added ${qty} units to ${res.data.medicine_name}`);
       setTimeout(() => setSuccessMsg(''), 3000);
       setUpdateQtys(prev => ({ ...prev, [uqid]: '' }));
       setMedicines(prev => prev.map(m => m.uqid === uqid ? { ...m, stock: res.data.new_stock } : m));
@@ -87,6 +87,30 @@ const MedicineEntry = () => {
       setCampStocks(prev => prev.map(s => s.uqid === uqid ? { ...s, total_stock: res.data.new_stock } : s));
     } catch (err) {
       alert('Error updating stock: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleSetStock = async (uqid) => {
+    const qty = parseInt(updateQtys[uqid]);
+    if (isNaN(qty) || qty < 0) {
+      alert('Please enter a valid number (0 or above)');
+      return;
+    }
+
+    try {
+      const res = await axios.post(`${API_BASE}/set_stock`, {
+        uqid: uqid,
+        stock: qty
+      });
+      
+      setSuccessMsg(`Successfully set ${res.data.medicine_name} stock to ${qty}`);
+      setTimeout(() => setSuccessMsg(''), 3000);
+      setUpdateQtys(prev => ({ ...prev, [uqid]: '' }));
+      setMedicines(prev => prev.map(m => m.uqid === uqid ? { ...m, stock: res.data.new_stock } : m));
+      // Sync camp stocks view too
+      setCampStocks(prev => prev.map(s => s.uqid === uqid ? { ...s, total_stock: res.data.new_stock } : s));
+    } catch (err) {
+      alert('Error setting stock: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -302,26 +326,35 @@ const MedicineEntry = () => {
                          </div>
                       </td>
                       <td className="px-8 py-6 text-right">
-                         <div className="flex items-center justify-end gap-3">
-                           <div className="relative">
-                              <input
-                                type="number"
-                                placeholder="0"
-                                className="w-24 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 font-black text-center focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 outline-none transition-all placeholder:text-slate-200 shadow-sm"
-                                value={updateQtys[med.uqid] || ''}
-                                onChange={e => handleQtyChange(med.uqid, e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleUpdate(med.uqid)}
-                              />
+                           <div className="flex items-center justify-end gap-3">
+                             <div className="relative">
+                                <input
+                                  type="number"
+                                  placeholder="0"
+                                  className="w-24 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 font-black text-center focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 outline-none transition-all placeholder:text-slate-200 shadow-sm"
+                                  value={updateQtys[med.uqid] !== undefined ? updateQtys[med.uqid] : ''}
+                                  onChange={e => handleQtyChange(med.uqid, e.target.value)}
+                                />
+                             </div>
+                             <div className="flex flex-col gap-1">
+                               <button
+                                 onClick={() => handleUpdate(med.uqid)}
+                                 disabled={!updateQtys[med.uqid] || updateQtys[med.uqid] <= 0}
+                                 className="px-3 py-1 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-100 disabled:text-slate-300 text-white rounded-lg transition-all shadow-sm text-[10px] font-black uppercase tracking-widest"
+                                 title="Add to existing stock"
+                               >
+                                 Add
+                               </button>
+                               <button
+                                 onClick={() => handleSetStock(med.uqid)}
+                                 disabled={updateQtys[med.uqid] === undefined || updateQtys[med.uqid] === '' || updateQtys[med.uqid] < 0}
+                                 className="px-3 py-1 bg-slate-700 hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-300 text-white rounded-lg transition-all shadow-sm text-[10px] font-black uppercase tracking-widest"
+                                 title="Set absolute stock value"
+                               >
+                                 Set
+                               </button>
+                             </div>
                            </div>
-                           <button
-                             onClick={() => handleUpdate(med.uqid)}
-                             disabled={!updateQtys[med.uqid] || updateQtys[med.uqid] <= 0}
-                             className="p-3 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-100 disabled:text-slate-300 text-white rounded-xl transition-all shadow-lg shadow-teal-100 active:scale-95"
-                             title="Add to Stock"
-                           >
-                             <PlusCircle size={20} strokeWidth={2.5} />
-                           </button>
-                         </div>
                       </td>
                     </tr>
                   ))

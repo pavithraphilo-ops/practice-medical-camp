@@ -29,7 +29,7 @@ class MedicalCampVenue(models.Model):
         return self.name
 
 class MedicalCamp(models.Model):
-    number = models.IntegerField()
+    number = models.IntegerField(unique=True)
     venue = models.ForeignKey(MedicalCampVenue, on_delete=models.CASCADE)
     date = models.DateField()
 

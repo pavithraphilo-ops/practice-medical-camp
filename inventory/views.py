@@ -186,7 +186,7 @@ def export(request):
 # --- API Endpoints for React Frontend ---
 
 def api_get_camps(request):
-    camps = MedicalCamp.objects.all().order_by('-date')
+    camps = MedicalCamp.objects.all().order_by('id')
     data = []
     for camp in camps:
         data.append({
@@ -429,6 +429,32 @@ def api_update_medicine_stock(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_set_medicine_stock(request):
+    """Directly set the stock value for a medicine (allows 0)."""
+    try:
+        data = json.loads(request.body)
+        uqid = data.get('uqid')
+        new_stock = int(data.get('stock', 0))
+
+        if new_stock < 0:
+            return JsonResponse({'status': 'error', 'message': 'Stock cannot be negative.'}, status=400)
+
+        medicine = Medicine.objects.get(uqid=uqid)
+        medicine.stock = new_stock
+        medicine.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'new_stock': medicine.stock,
+            'medicine_name': medicine.name
+        })
+    except Medicine.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Medicine not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
 def api_get_camp_wise_stock(request):
 
     stocks = CampWiseStock.objects.all()
@@ -507,6 +533,51 @@ def api_allocate_to_camp(request):
             'status': 'error',
             'message': str(e)
         }, status=400)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_set_camp_allocation(request):
+    """Set the allocated_stock for a medicine in a specific camp.
+    Allows qty = 0 to clear the allocation. Adjusts central Medicine.stock accordingly.
+    Expected JSON payload:
+        {"camp_id": <int>, "uqid": <int>, "qty": <int>}
+    """
+    try:
+        data = json.loads(request.body)
+        camp_id = data.get('camp_id')
+        uqid = data.get('uqid')
+        qty = int(data.get('qty', 0))
+        if qty < 0:
+            return JsonResponse({'status': 'error', 'message': 'Quantity cannot be negative.'}, status=400)
+
+        camp = MedicalCamp.objects.get(id=camp_id)
+        medicine = Medicine.objects.get(uqid=uqid)
+
+        camp_stock, _ = CampWiseStock.objects.get_or_create(
+            camp=camp,
+            medicine=medicine,
+            defaults={'allocated_stock': 0, 'used_stock': 0}
+        )
+
+        diff = qty - camp_stock.allocated_stock  # positive = allocate more, negative = release
+        if diff > 0 and medicine.stock < diff:
+            return JsonResponse({'status': 'error', 'message': f'Insufficient central stock. Available: {medicine.stock}'}, status=400)
+
+        # Adjust central stock
+        medicine.stock -= diff
+        medicine.save()
+
+        # Update camp allocation
+        camp_stock.allocated_stock = qty
+        camp_stock.save()
+
+        return JsonResponse({'status': 'success', 'new_allocation': qty, 'central_stock': medicine.stock})
+    except MedicalCamp.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Camp not found'}, status=404)
+    except Medicine.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Medicine not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @csrf_exempt
 @require_http_methods(["POST"])
