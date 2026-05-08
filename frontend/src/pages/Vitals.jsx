@@ -4,7 +4,8 @@ import {
   Activity, Save, CheckCircle2, User, Heart, HeartPulse,
   Droplets, Thermometer, Clock, Calendar, Hash, Weight,
   Ruler, Stethoscope, Pill, PlusCircle, Trash2, FileText,
-  AlertCircle, X, Landmark, FlaskConical, TestTubes
+  AlertCircle, X, Landmark, FlaskConical, TestTubes,
+  Users, ChevronDown, ChevronUp, Search, ClipboardList
 } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
@@ -60,6 +61,12 @@ const Vitals = () => {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Camp Wise Patient List state
+  const [listCamp, setListCamp] = useState('');
+  const [campPatients, setCampPatients] = useState([]);
+  const [listLoading, setListLoading] = useState(false);
+  const [expandedPatient, setExpandedPatient] = useState(null);
 
   useEffect(() => {
     axios.get(`${API_BASE}/camps`).then(res => setCamps(res.data));
@@ -176,8 +183,12 @@ const Vitals = () => {
 
 
 
+
+
   return (
     <div className="max-w-7xl mx-auto py-6 space-y-8">
+
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
         <div>

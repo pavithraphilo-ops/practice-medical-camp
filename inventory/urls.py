@@ -30,4 +30,5 @@ urlpatterns = [
     path('api/close_camp_session', api_close_camp_session),
     path('api/register_camp', api_register_camp),
     path('api/tests', api_get_medical_tests),
+    path('api/camp_patients/<int:camp_id>', api_camp_patients),
 ]
