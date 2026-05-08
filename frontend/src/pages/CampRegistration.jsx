@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import {
-  Landmark, Save, CheckCircle2, Heart, Calendar, Hash,
-  AlertCircle, Tent
+  Hospital, Save, CheckCircle2, HeartPulse, Calendar, Hash,
+  AlertCircle, Stethoscope
 } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
@@ -90,12 +90,12 @@ const CampRegistration = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Heart size={14} className="text-teal-500" />
+            <HeartPulse size={14} className="text-teal-500" />
             <p className="text-teal-600 text-[10px] font-extrabold uppercase tracking-[0.25em]">Administration</p>
           </div>
           <div className="flex items-center gap-3 mb-1">
             <div className="p-2.5 bg-teal-50 rounded-xl border border-teal-200">
-              <Tent className="text-teal-600" size={24} strokeWidth={2.5} />
+              <Stethoscope className="text-teal-600" size={24} strokeWidth={2.5} />
             </div>
             <h3 className="text-3xl font-black text-slate-800 tracking-tight">Medical Camp Registration</h3>
           </div>
@@ -127,7 +127,7 @@ const CampRegistration = () => {
           {/* Camp Venue / Location */}
           <div className="space-y-3">
             <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-              <Landmark size={12} className="text-teal-500" strokeWidth={2.5} />
+              <Hospital size={12} className="text-teal-500" strokeWidth={2.5} />
               Camp Venue / Location
               <span className="text-rose-400">*</span>
             </label>
@@ -145,7 +145,7 @@ const CampRegistration = () => {
           <div className="space-y-3">
             <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
               <Hash size={12} className="text-teal-500" strokeWidth={2.5} />
-              Camp ID
+              Camp Number
               <span className="text-rose-400">*</span>
             </label>
             <input
