@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Pill, Search, Download, PackageOpen, Filter, Box, Heart, Check, X } from 'lucide-react';
+import { Pill, Search, Download, PackageOpen, Filter, Box, Heart, Check, X, AlertTriangle } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
@@ -229,12 +229,17 @@ const Inventory = () => {
                       ) : (
                         /* Display mode */
                         <div className="flex flex-col items-end cursor-pointer" onClick={() => startEdit(med)}>
-                          <span className={`text-xl font-black font-data ${med.stock > 10 ? 'text-slate-800' : 'text-red-500'}`}>
-                            {med.stock}
-                          </span>
-                          <div className={`h-1.5 w-14 rounded-full mt-2 ${med.stock > 10 ? 'bg-emerald-100' : 'bg-red-100'}`}>
+                          <div className="flex items-center gap-2">
+                            {med.stock < 50 && (
+                              <AlertTriangle size={18} strokeWidth={2.5} className="text-red-500 animate-pulse" title="Low Stock Alert" />
+                            )}
+                            <span className={`text-xl font-black font-data ${med.stock >= 50 ? 'text-slate-800' : 'text-red-500'}`}>
+                              {med.stock}
+                            </span>
+                          </div>
+                          <div className={`h-1.5 w-14 rounded-full mt-2 ${med.stock >= 50 ? 'bg-emerald-100' : 'bg-red-100'}`}>
                              <div 
-                              className={`h-full rounded-full transition-all ${med.stock > 10 ? 'bg-emerald-500' : 'bg-red-500'}`} 
+                              className={`h-full rounded-full transition-all ${med.stock >= 50 ? 'bg-emerald-500' : 'bg-red-500'}`} 
                               style={{ width: `${Math.min(med.stock, 100)}%` }}
                             />
                           </div>

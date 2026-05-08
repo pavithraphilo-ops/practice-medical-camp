@@ -29,5 +29,9 @@ urlpatterns = [
     path('api/return_to_warehouse', api_return_to_warehouse),
     path('api/close_camp_session', api_close_camp_session),
     path('api/register_camp', api_register_camp),
+<<<<<<< HEAD
     path('api/camp_patients/<int:camp_id>', api_camp_patients),
+=======
+    path('api/tests', api_get_medical_tests),
+>>>>>>> backend
 ]

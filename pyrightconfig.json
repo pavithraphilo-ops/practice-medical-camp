@@ -1,8 +1,11 @@
 {
-  "venvPath": ".",
-  "venv": "venv",
+  "pythonPath": "/home/neeraj/medical_camp_venv/bin/python3",
+  "venvPath": "/home/neeraj",
+  "venv": "medical_camp_venv",
   "pythonVersion": "3.12",
   "extraPaths": [
-    "./venv/lib/python3.12/site-packages"
-  ]
+    "/home/neeraj/medical_camp_venv/lib/python3.12/site-packages"
+  ],
+  "reportMissingImports": false,
+  "reportMissingModuleSource": false
 }

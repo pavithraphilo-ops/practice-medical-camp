@@ -36,7 +36,7 @@ class MedicalCamp(models.Model):
     def __str__(self):
         return f"{self.venue} -{self.number} on {self.date}"
 
-class Issue(models.Model):
+class PatientMedicineIssue(models.Model):
     patient_id = models.IntegerField()
     camp = models.ForeignKey(MedicalCamp, on_delete=models.CASCADE)
     medicine = models.ForeignKey(Medicine, on_delete=models.CASCADE)
@@ -94,10 +94,13 @@ class PatientVitals(models.Model):
         return f"Patient {self.patient_id} - {self.date} at {self.camp}"
 
 class MedicalTest(models.Model):
+    test_id = models.IntegerField(unique=True)
     name = models.CharField(max_length=1000)
+    actual_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    patient_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
     def __str__(self):
-        return self.name
+        return f"{self.test_id} - {self.name}"
         
 class TestIssue(models.Model):
     patient_id = models.IntegerField()

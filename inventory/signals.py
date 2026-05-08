@@ -1,22 +1,13 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
-from .models import MedicalCamp
-from .models import Medicine
-from .models import CampWiseStock
-from .models import Issue
-from django.db.models.signals import post_save, post_delete
-
+from .models import MedicalCamp, Medicine, CampWiseStock, PatientMedicineIssue
 
 @receiver(post_save, sender=MedicalCamp)
 def create_camp_stock(sender, instance, created, **kwargs):
-
     if created:
-
         medicines = Medicine.objects.all()
-
         for medicine in medicines:
-
             CampWiseStock.objects.create(
                 camp=instance,
                 medicine=medicine,
@@ -24,9 +15,9 @@ def create_camp_stock(sender, instance, created, **kwargs):
                 used_stock=0
             )
 
-@receiver(post_save, sender=Issue)
+@receiver(post_save, sender=PatientMedicineIssue)
 def update_camp_stock_on_issue(sender, instance, created, **kwargs):
-    """Updates used_stock when a new Issue is created."""
+    """Updates used_stock when a new PatientMedicineIssue is created."""
     if created:
         camp_stock, _ = CampWiseStock.objects.get_or_create(
             camp=instance.camp,
@@ -36,9 +27,9 @@ def update_camp_stock_on_issue(sender, instance, created, **kwargs):
         camp_stock.used_stock += instance.qty
         camp_stock.save()
 
-@receiver(post_delete, sender=Issue)
+@receiver(post_delete, sender=PatientMedicineIssue)
 def update_camp_stock_on_delete(sender, instance, **kwargs):
-    """Decrements used_stock when an Issue is deleted."""
+    """Decrements used_stock when an PatientMedicineIssue is deleted."""
     try:
         camp_stock = CampWiseStock.objects.get(
             camp=instance.camp,
