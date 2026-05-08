@@ -655,3 +655,51 @@ def api_register_camp(request):
         })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+def api_camp_patients(request, camp_id):
+    """Return all patients for a given camp with their medicines and tests."""
+    try:
+        camp = MedicalCamp.objects.get(id=camp_id)
+    except MedicalCamp.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Camp not found'}, status=404)
+
+    # Gather all unique patient IDs from PatientVitals + Issue + TestIssue for this camp
+    vitals_pids = set(PatientVitals.objects.filter(camp=camp).values_list('patient_id', flat=True))
+    issue_pids = set(Issue.objects.filter(camp=camp).values_list('patient_id', flat=True))
+    test_pids = set(TestIssue.objects.filter(camp=camp).values_list('patient_id', flat=True))
+    all_pids = vitals_pids | issue_pids | test_pids
+
+    # Build a lookup for patient names
+    patient_names = {}
+    for p in Patient.objects.filter(patient_id__in=all_pids):
+        patient_names[p.patient_id] = p.patient_name or ''
+
+    result = []
+    for pid in sorted(all_pids):
+        # Medicines
+        issues = Issue.objects.filter(patient_id=pid, camp=camp)
+        medicines = []
+        for iss in issues:
+            medicines.append({
+                'medicine_id': iss.medicine.uqid,
+                'medicine_name': iss.medicine.name,
+                'quantity': iss.qty,
+            })
+
+        # Tests
+        test_issues = TestIssue.objects.filter(patient_id=pid, camp=camp)
+        tests = []
+        for ti in test_issues:
+            tests.append({
+                'test_id': ti.test.id,
+                'test_name': ti.test.name,
+            })
+
+        result.append({
+            'patient_id': pid,
+            'patient_name': patient_names.get(pid, ''),
+            'medicines': medicines,
+            'tests': tests,
+        })
+
+    return JsonResponse(result, safe=False)
