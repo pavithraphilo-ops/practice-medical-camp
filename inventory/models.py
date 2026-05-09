@@ -9,7 +9,7 @@ class MedicineCategory(models.Model):
     short_code = models.CharField(max_length=20)
 
     def __str__(self):
-        return str(self.name)
+        return self.name
 
 class Medicine(models.Model):
     uqid = models.IntegerField(unique=True)
@@ -26,8 +26,8 @@ class MedicalCampVenue(models.Model):
     name = models.CharField(max_length=2000)
 
     def __str__(self):
-        return str(self.name)
-
+        return self.name
+     
 class MedicalCamp(models.Model):
     number = models.IntegerField(unique=True)
     venue = models.ForeignKey(MedicalCampVenue, on_delete=models.CASCADE)
@@ -151,6 +151,7 @@ class CampWiseStock(models.Model):
         unique_together = ('camp', 'medicine')
 
     def remaining_stock(self):
+        # pyrefly: ignore [unsupported-operation]
         return self.allocated_stock - self.used_stock
 
     def __str__(self):
