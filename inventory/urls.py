@@ -5,13 +5,13 @@ from .views import *
 urlpatterns = [
     # Redirect root to React Frontend (Port 5173)
     path('', RedirectView.as_view(url='http://localhost:5173/')),
-    
+
     # Legacy Django Template Views
     path('legacy/issue/', index, name='legacy_issue'),
 
     # Data Export
     path('export', export),
-    
+
     # API Endpoints
     path('api/camps', api_get_camps),
     path('api/medicines', api_get_medicines),
@@ -31,4 +31,5 @@ urlpatterns = [
     path('api/register_camp', api_register_camp),
     path('api/tests', api_get_medical_tests),
     path('api/camp_patients/<int:camp_id>', api_camp_patients),
+    path('api/update_test_record', api_update_test_record),
 ]

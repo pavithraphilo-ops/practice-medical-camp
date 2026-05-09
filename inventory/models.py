@@ -27,7 +27,7 @@ class MedicalCampVenue(models.Model):
 
     def __str__(self):
         return self.name
-
+     
 class MedicalCamp(models.Model):
     number = models.IntegerField(unique=True)
     venue = models.ForeignKey(MedicalCampVenue, on_delete=models.CASCADE)
@@ -106,9 +106,10 @@ class TestIssue(models.Model):
     patient_id = models.IntegerField()
     camp = models.ForeignKey(MedicalCamp, on_delete=models.CASCADE)
     test = models.ForeignKey(MedicalTest, on_delete=models.CASCADE)
+    reports_issued = models.BooleanField(default=False)
     
     def __str__(self):
-        return f"Patient {self.patient_id}, Camp: {self.camp} issued {self.test}"
+        return f"Patient {self.patient_id}, Camp: {self.camp} issued {self.test} (Reports Issued: {self.reports_issued})"
 
 class Patient(models.Model):
     class Meta:
@@ -150,6 +151,7 @@ class CampWiseStock(models.Model):
         unique_together = ('camp', 'medicine')
 
     def remaining_stock(self):
+        # pyrefly: ignore [unsupported-operation]
         return self.allocated_stock - self.used_stock
 
     def __str__(self):
