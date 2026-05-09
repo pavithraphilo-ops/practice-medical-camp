@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, LayoutDashboard, UserSearch, UserPlus, ArrowRight } from 'lucide-react';
+import { Heart, LayoutDashboard, UserSearch, UserPlus, UserCheck, ArrowRight } from 'lucide-react';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ const Dashboard = () => {
       </div>
 
       {/* Option Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-4">
 
         {/* Existing Patient Card */}
         <button
@@ -88,6 +88,40 @@ const Dashboard = () => {
 
             <div className="flex items-center gap-2 text-[10px] font-black text-emerald-500 uppercase tracking-widest opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
               <span>Open Registration Form</span>
+              <ArrowRight size={12} strokeWidth={3} />
+            </div>
+          </div>
+        </button>
+
+        {/* Register Old Patient Card */}
+        <button
+          onClick={() => navigate('/register-old')}
+          className="group relative overflow-hidden text-left glass-panel-light p-8 hover:border-amber-300 transition-all duration-300 hover:shadow-xl hover:shadow-amber-100/50 active:scale-[0.98]"
+        >
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-orange-400 to-yellow-400" />
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-50/0 to-amber-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+          <div className="relative space-y-5">
+            <div className="flex items-center justify-between">
+              <div className="p-3.5 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl border border-amber-100 shadow-sm group-hover:shadow-md group-hover:shadow-amber-100 transition-all">
+                <UserCheck size={28} className="text-amber-600" strokeWidth={2} />
+              </div>
+              <div className="p-2 bg-slate-50 rounded-full text-slate-300 group-hover:text-amber-500 group-hover:bg-amber-50 group-hover:translate-x-1 transition-all duration-300">
+                <ArrowRight size={20} strokeWidth={2.5} />
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-xl font-black text-slate-800 tracking-tight mb-1.5 group-hover:text-amber-700 transition-colors">
+                Register Old Patient
+              </h4>
+              <p className="text-sm text-slate-400 font-bold leading-relaxed">
+                Re-register a returning patient for a new camp session
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 text-[10px] font-black text-amber-500 uppercase tracking-widest opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+              <span>Open Old Patient Form</span>
               <ArrowRight size={12} strokeWidth={3} />
             </div>
           </div>

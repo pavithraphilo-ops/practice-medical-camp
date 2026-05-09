@@ -10,6 +10,7 @@ import AdminLogin from './pages/AdminLogin';
 import MedicineEntry from './pages/MedicineEntry';
 import CampRegistration from './pages/CampRegistration';
 import CampPatients from './pages/CampPatients';
+import OldPatientRegistration from './pages/OldPatientRegistration';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="/patient" element={<PatientProfile />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/register" element={<PatientRegistration />} />
+          <Route path="/register-old" element={<OldPatientRegistration />} />
           <Route path="/medicine-entry" element={<MedicineEntry />} />
           <Route path="/camp-registration" element={<CampRegistration />} />
           <Route path="/camp-patients" element={<CampPatients />} />
