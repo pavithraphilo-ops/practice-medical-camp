@@ -273,17 +273,16 @@ const Vitals = () => {
             <VitalInput icon={Activity} label="Pulse" value={pulse} onChange={setPulse} placeholder="BPM" iconColor="text-pink-500" />
           </div>
 
-          {/* Row 3: RBS, Hemo, Last Food/Time */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-5">
+          {/* Row 3: RBS, Hemo */}
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-5 mb-5">
             <VitalInput icon={Droplets} label="RBS" value={rbs} onChange={setRbs} placeholder="Blood Sugar" iconColor="text-amber-500" />
             <VitalInput icon={Thermometer} label="Hemo" value={haemoglobin} onChange={setHaemoglobin} placeholder="Haemoglobin" iconColor="text-rose-500" />
-            <VitalInput icon={Clock} label="Last Food / Time" value={lastFoodTime} onChange={setLastFoodTime} placeholder="e.g. 8:00 AM" colSpan="md:col-span-2" iconColor="text-emerald-500" />
           </div>
 
           {/* Row 4: Dr Name, Dr ID */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-            <VitalInput icon={Stethoscope} label="Dr. Name" value={drName} onChange={setDrName} placeholder="Doctor Name" iconColor="text-blue-500" />
             <VitalInput icon={Hash} label="Dr. ID" value={drId} onChange={setDrId} placeholder="Doctor ID" iconColor="text-indigo-500" />
+            <VitalInput icon={Stethoscope} label="Dr. Name" value={drName} onChange={setDrName} placeholder="Doctor Name" iconColor="text-blue-500" />
           </div>
 
           {/* Row 5: Diagnosis & Tests */}
