@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
   Activity, Save, CheckCircle2, User, Heart, HeartPulse,
   Droplets, Thermometer, Clock, Calendar, Hash, Weight,
   Ruler, Stethoscope, Pill, PlusCircle, Trash2, FileText,
   AlertCircle, X, Landmark, FlaskConical, TestTubes,
-  Users, ChevronDown, ChevronUp, Search, ClipboardList
+  Users, ChevronDown, ChevronUp, Search, ClipboardList,
+  Camera, ScanLine
 } from 'lucide-react';
+import ScanVitalsModal from '../components/ocr/ScanVitalsModal';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
@@ -68,6 +70,9 @@ const Vitals = () => {
   const [campPatients, setCampPatients] = useState([]);
   const [listLoading, setListLoading] = useState(false);
   const [expandedPatient, setExpandedPatient] = useState(null);
+
+  // OCR Scan state
+  const [isScanModalOpen, setIsScanModalOpen] = useState(false);
 
   useEffect(() => {
     axios.get(`${API_BASE}/camps`).then(res => setCamps(res.data));
@@ -147,6 +152,23 @@ const Vitals = () => {
     const night = parseInt(med.night) || 0;
     return days > 0 ? days * (morning + afternoon + night) : '';
   };
+
+  // Handler for OCR scanned data
+  const handleApplyScannedData = useCallback((scannedData) => {
+    if (scannedData.patientId) setPatientId(scannedData.patientId);
+    if (scannedData.eNo) setENo(scannedData.eNo);
+    if (scannedData.weight) setWeight(scannedData.weight);
+    if (scannedData.height) setHeight(scannedData.height);
+    if (scannedData.bloodPressure) setBloodPressure(scannedData.bloodPressure);
+    if (scannedData.pulse) setPulse(scannedData.pulse);
+    if (scannedData.rbs) setRbs(scannedData.rbs);
+    if (scannedData.haemoglobin) setHaemoglobin(scannedData.haemoglobin);
+    if (scannedData.drId) setDrId(scannedData.drId);
+    if (scannedData.drName) setDrName(scannedData.drName);
+    
+    setSuccess(true);
+    setTimeout(() => setSuccess(false), 3000);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -229,20 +251,36 @@ const Vitals = () => {
           <p className="text-slate-400 text-sm font-bold ml-[52px]">Record vitals, diagnosis & issue medicines</p>
         </div>
 
-        {/* Success / Error badges */}
-        <div className="flex gap-3">
-          {success && (
-            <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-5 py-3 rounded-xl border border-emerald-200 shadow-sm animate-bounce">
-              <CheckCircle2 size={18} strokeWidth={3} />
-              <span className="text-xs font-black uppercase tracking-widest">Record Saved</span>
+        {/* Scan Button & Success/Error badges */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* OCR Scan Button */}
+          <button
+            type="button"
+            onClick={() => setIsScanModalOpen(true)}
+            className="group flex items-center justify-center gap-3 px-6 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-2xl font-bold text-sm transition-all shadow-lg shadow-violet-200/50 active:scale-[0.98]"
+          >
+            <div className="relative">
+              <Camera size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
+              <ScanLine size={10} className="absolute -bottom-0.5 -right-0.5 text-violet-200" />
             </div>
-          )}
-          {error && (
-            <div className="flex items-center gap-2 text-rose-600 bg-rose-50 px-5 py-3 rounded-xl border border-rose-200 shadow-sm">
-              <AlertCircle size={18} strokeWidth={3} />
-              <span className="text-xs font-black uppercase tracking-widest">{error}</span>
-            </div>
-          )}
+            <span className="uppercase tracking-wider text-[11px] font-black">Scan Vitals Sheet</span>
+          </button>
+
+          {/* Success / Error badges */}
+          <div className="flex gap-3">
+            {success && (
+              <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-5 py-3 rounded-xl border border-emerald-200 shadow-sm animate-bounce">
+                <CheckCircle2 size={18} strokeWidth={3} />
+                <span className="text-xs font-black uppercase tracking-widest">Data Applied</span>
+              </div>
+            )}
+            {error && (
+              <div className="flex items-center gap-2 text-rose-600 bg-rose-50 px-5 py-3 rounded-xl border border-rose-200 shadow-sm">
+                <AlertCircle size={18} strokeWidth={3} />
+                <span className="text-xs font-black uppercase tracking-widest">{error}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -591,6 +629,13 @@ const Vitals = () => {
           </div>
         </button>
       </form>
+
+      {/* OCR Scan Modal */}
+      <ScanVitalsModal
+        isOpen={isScanModalOpen}
+        onClose={() => setIsScanModalOpen(false)}
+        onApplyData={handleApplyScannedData}
+      />
     </div>
   );
 };
